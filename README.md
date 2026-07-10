@@ -1,0 +1,84 @@
+# HCGplugin
+
+All-in-one PaperMC 1.21.1+ plugin with utility commands, minigames and helpers. All commands default to op-only.
+
+## Building
+
+```
+mvn package
+```
+
+The jar is produced at `target/HCGplugin-<version>.jar`. Drop it into your server's `plugins/` folder and restart.
+
+## Help
+
+`/hcg help` or `/hcg` shows the clickable category list.
+Click a category or type `/hcg help <category> [page]` to see its commands, paginated with Back/Prev/Next arrows and click-to-fill command entries. Category names are matched loosely: `/hcg help admin` works.
+
+## Health decay game mode
+
+Everyone's max health slowly ticks down until it bottoms out at 3 hearts. When one player kills another, directly or indirectly (knocking them into lava, player-lit TNT, trap kills that follow a fight) everyone's health is fully restored and the decay starts over.
+
+## Random drops game mode
+
+While enabled, every block broken in survival drops one random survival-obtainable item or block instead of its normal drop (creative-/command-only things like command blocks, barriers, spawn eggs, and the debug stick are excluded). XP and container contents still drop normally.
+
+Two modes:
+
+- **dynamic** (default): every break rolls a fresh random drop.
+- **static**: each block type is assigned one fixed random drop (grass -> obsidian means grass _always_ drops obsidian). The table is derived from a seed saved in `config.yml`, so it survives restarts; `/randomdrops reroll` generates a new table.
+
+## Lava raise game mode
+
+While enabled, every Minecraft day at the configured world-clock **start time**, lava rises layer by layer from bedrock up to the configured **max Y** over the configured **travel time**; it holds there until the **end time**, then drains back down over the same travel time.
+
+Implementation notes:
+
+- **The lava is a client-side illusion.** It's sent as block-change packets, so the clients render real animated lava (fog, swim physics included) while the server world never changes, nothing can burn, flow, or need cleanup.
+- Burning is server-side: players at or below the lava level catch fire and take lava-rate damage (water protects them unless `replace-water` is on). Creative/spectator players are unaffected; mobs burn too if `damage-mobs` is on.
+- With `burn-placed-blocks` on (default), burnable blocks that were **placed by a player** (tracked from placement, persisted across restarts) burn away as the lava passes them.
+- Packets are paced (`blocks-per-tick`, default 40000 positions/tick) and sent for all chunks each player can see (`render-radius`, default = full view distance). The region is the world border, capped at `max-region` blocks.
+
+## Utility commands
+
+| Command                                 | Effect                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `/hcg help [category] [page]`           | Categorized help menu with clickable navigation                  |
+| `/flyspeed <1-10>`                      | Set your fly speed (vanilla default is 1)                        |
+| `/fly`                                  | Toggle flight in any gamemode (survival, adventure, ...)         |
+| `/gmc` `/gms` `/gmsp` `/gma` `[player]` | Gamemode shortcuts: creative, survival, spectator, adventure     |
+| `/tpall here`                           | Teleport all other players to you                                |
+| `/tpall looking`                        | Teleport all other players to the block you're looking at        |
+| `/tpall <player>`                       | Teleport all other players to that player                        |
+| `/freeze <player>`                      | Toggle freeze on a player (can look around, can't move or pearl) |
+| `/freeze all`                           | Freeze everyone except you; run again to unfreeze                |
+| `/invsee <player>`                      | Open another player's inventory                                  |
+| `/heal [player\|all]`                   | Heal yourself, a player, or everyone (also extinguishes fire)    |
+| `/feed [player\|all]`                   | Restore hunger and saturation                                    |
+| `/god [player]`                         | Toggle invulnerability                                           |
+| `/burn <player> [seconds]`              | Set a player on fire (default 5s)                                |
+| `/nickname [player] <text\|reset>`      | Set a display name for chat + tab list; `&` colors               |
+| `/sudo <player> <msg or /cmd>`          | Make a player chat a message or run a command                    |
+
+## Item commands
+
+| Command                          | Effect                                                   |
+| -------------------------------- | -------------------------------------------------------- |
+| `/anvil`                         | Open a virtual anvil                                     |
+| `/craft`                         | Open a virtual crafting table                            |
+| `/enderchest [player]` (`/ec`)   | Open your (or another player's) ender chest              |
+| `/enchant <enchantment> <level>` | Enchant held item, up to level 255 (0 removes)           |
+| `/hat`                           | Wear your held item as a hat (swaps with current helmet) |
+| `/name <text\|reset>`            | Rename held item; `&` color codes                        |
+| `/lore <text\|reset>`            | Set held item lore; `&` colors, `\|` splits lines        |
+
+## World commands
+
+| Command                           | Effect                                                                                     |
+| --------------------------------- | ------------------------------------------------------------------------------------------ |
+| `/lightning`                      | Strike lightning where you're looking                                                      |
+| `/remove items`                   | Remove all loaded ground items                                                             |
+| `/remove entities`                | Remove all loaded non-player entities                                                      |
+| `/remove mobs [hostile\|neutral]` | Remove all mobs, or only hostile / neutral+passive ones                                    |
+| `/spawner <mob>`                  | Change the mob type of the spawner you're looking at                                       |
+| `/spawnmob <mob> [amount]`        | Spawn mobs at your location (max 1000)                                                     |
