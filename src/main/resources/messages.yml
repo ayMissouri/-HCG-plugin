@@ -1,0 +1,162 @@
+# - Color/format codes use & (e.g. &a green, &c red, &6 gold, &l bold, &o italic).
+# - {placeholders} are filled in by the plugin, keep them where you want the value.
+
+general:
+  only-players: "&cOnly players can use this command."
+  player-not-online: "&cPlayer '{player}' is not online."
+  not-a-number: "&c'{input}' is not a number."
+  not-positive: "&c'{input}' is not a positive number."
+  missing-argument: "&cMissing <{name}> argument."
+  console-needs-player: "&cConsole must specify a player."
+  value-range: "&cValue must be between {min} and {max}."
+
+healthdecay:
+  start-broadcast: "&4Health decay has begun!"
+  stop-broadcast: "&aHealth decay has been disabled."
+  kill-broadcast: "&c{killer} &6took &c{victim}&6's life, everyone's health has been restored!"
+  bottomed-out: "&4Health has reached {hearts} hearts."
+  already-running: "&eHealth decay is already running." 
+  not-running: "&eHealth decay is not running."
+  restored: "&aEveryone's health has been restored."
+  interval-set: "&aDecay interval set to {seconds}s."
+  amount-set: "&aDecay amount set to {hearts} heart(s) per tick."
+  status-state: "&6Health decay is {state}."
+  status-health: "&6Current max health: {current} hearts (min: {floor})"
+  status-rate: "&6Losing {amount} heart(s) every {seconds}s."
+
+randomdrops:
+  enabled-broadcast: "&dRandom drops enabled ({mode} mode)!"
+  disabled-broadcast: "&aRandom drops disabled."
+  already-enabled: "&eRandom drops are already enabled."
+  not-enabled: "&eRandom drops are not enabled."
+  status: "&6Random drops are {state} in {mode} mode, random enchants {enchants}, mob drops {mobs}."
+  mode-set: "&aRandom drops mode set to {mode}."
+  mode-usage: "&cUsage: /randomdrops mode <dynamic|static>"
+  enchants-set: "&aRandom enchants turned {state}."
+  enchants-usage: "&cUsage: /randomdrops enchants <on|off>"
+  mobs-set: "&aRandom mob drops turned {state}."
+  mobs-usage: "&cUsage: /randomdrops mobs <on|off>"
+  rerolled: "&aStatic drop table rerolled, every block now has a new fixed drop."
+  rerolled-short: "&aStatic drop table rerolled."
+
+lavaraise:
+  rising-broadcast: "&4The lava has started rising to Y={y}"
+  reached-broadcast: "&4The lava has reached Y={y}"
+  receding-broadcast: "&6The lava is receding..."
+  gone-broadcast: "&aThe lava is gone."
+  gone-repeat-broadcast: "&aThe lava is gone"
+  enabled: "&aLava raise enabled, the lava will rise at {time}."
+  already-enabled: "&eLava raise is already enabled."
+  disabled-draining: "&aLava raise disabled, draining the lava now."
+  disabled: "&aLava raise disabled."
+  not-enabled: "&eLava raise is not enabled."
+  draining-now: "&aDraining the lava now."
+  no-event: "&eNo lava event is running."
+  invalid-time: "&c'{input}' is not a time, use ticks (0-23999), HH:MM, or noon/midnight/..."
+  start-set: "&aStart time set to {time}."
+  end-set: "&aEnd time set to {time}."
+  duration-set: "&aRise/drain duration set to {seconds}s."
+  maxy-set: "&aMaximum level set to Y={y}."
+  water-set: "&aWater replacement turned {state}."
+  blocks-set: "&aBurning of player-placed blocks turned {state}."
+  mobs-set: "&aMob damage turned {state}."
+  purge-start: "&6Purging REAL lava blocks in the border region up to Y={y}"
+  purge-busy: "&cCan't purge while an event or another purge is running."
+  purge-complete: "&aLava purge complete, removed {count} lava blocks."
+  status-state: "&6Lava raise is {state}."
+  status-settings: "&6Rises at {start}, drains at {end}, {seconds}s travel, max Y={y}, water {water}."
+
+volcano:
+  center-set: "&aVolcano center set to {x}, {y}, {z} ({world})."
+  no-center: "&cNo center set, use /volcano setcenter first."
+  already-erupting: "&eThe volcano is already erupting."
+  not-erupting: "&eThe volcano isn't erupting."
+  duration-set: "&aDefault eruption duration set to {seconds}s."
+  radius-set: "&aShake radius set to {blocks} blocks."
+  shake-set: "&aScreen shake turned {state}."
+  status: "&6Volcano is {state}. Center: {center}. Default duration: {seconds}s."
+  status-schedule-on: "&6Erupts daily at {time}."
+  status-schedule-off: "&6Scheduled eruption: off (manual only)."
+  schedule-set: "&aThe volcano will now erupt daily at {time}."
+  schedule-off: "&aVolcano schedule disabled, manual eruptions only."
+  schedule-no-center: "&eNote: no center is set yet, the schedule won't fire until you run /volcano setcenter."
+  invalid-time: "&c'{input}' is not a time, use ticks (0-23999), HH:MM, or noon/midnight/..."
+  invalid-seconds: "&c'{input}' is not a number of seconds."
+
+commands:
+  heal:
+    done: "&aHealed {who}."
+  feed:
+    done: "&aFed {who}."
+  fly:
+    disabled: "&eFlight disabled."
+  flyspeed:
+    out-of-range: "&cFly speed must be between 1 and 10."
+    set: "&aFly speed set to {speed}."
+  gamemode:
+    set: "&aGamemode set to {mode}."
+    set-other: "&aSet {player}'s gamemode to {mode}."
+  tpall:
+    console-cant: "&cConsole cannot use '{option}'."
+    no-block: "&cNo block in sight within {range} blocks."
+    done: "&aTeleported {count} player(s) {where}."
+    where-here: "to you"
+    where-looking: "to where you're looking"
+    where-player: "to {player}"
+  freeze:
+    none-online: "&eNo other players are online."
+    froze-all: "&bFroze {count} player(s)."
+    unfroze-all: "&aUnfroze {count} player(s)."
+    froze: "&bFroze {player}."
+    unfroze: "&aUnfroze {player}."
+    target-frozen: "&bYou have been frozen!"
+    target-unfrozen: "&aYou have been unfrozen."
+    no-teleport: "&cYou are frozen and cannot teleport."
+  invsee:
+    own: "&eJust press E bro..."
+    viewing: "&aViewing {player}'s inventory."
+  enderchest:
+    viewing: "&aViewing {player}'s ender chest."
+  burn:
+    done: "&6Set {player} on fire for {seconds}s."
+  enchant:
+    unknown: "&cUnknown enchantment '{input}'."
+    level-range: "&cLevel must be between 0 and {max} (0 removes the enchantment)."
+    hold-item: "&cHold the item you want to enchant."
+    not-present: "&eThat item doesn't have {enchant}."
+    removed: "&aRemoved {enchant}."
+    enchanted: "&aEnchanted with {enchant} {level}."
+  god:
+    enabled-other: "&aEnabled god mode for {player}."
+    disabled-other: "&aDisabled god mode for {player}."
+  hat:
+    hold-item: "&cHold the item you want to wear."
+  itemtext:
+    hold-item: "&cHold the item you want to edit."
+    name-set: "&aItem name set to: "
+    name-reset: "&aItem name reset."
+    lore-set: "&aItem lore set to: "
+    lore-reset: "&aItem lore reset."
+  nickname:
+    reset: "&aReset {player}'s nickname."
+    now-known: "&a{player} is now known as "
+    you-are-known: "&aYou are now known as "
+  lightning:
+    no-block: "&cNo block in sight within {range} blocks."
+  remove:
+    unknown-filter: "&cUnknown filter '{input}', use hostile or neutral."
+    done: "&aRemoved {count} {what}."
+    what-items: "ground item(s)"
+    what-entities: "entity/entities"
+    what-mobs: "mob(s)"
+    what-hostile: "hostile mob(s)"
+    what-neutral: "neutral/passive mob(s)"
+  spawner:
+    unknown-mob: "&cUnknown mob '{input}'."
+    look-at: "&cLook at a spawner within {range} blocks."
+    set: "&aSpawner set to {mob}."
+  spawnmob:
+    done: "&aSpawned {amount} {mob}."
+  sudo:
+    forced-command: "&aForced {player} to run: {input}"
+    forced-chat: "&aForced {player} to say: {input}"
