@@ -71,6 +71,11 @@ hungergames:
   # Seconds each stage's shrink takes.
   stage-shrink-seconds: 60
 
+npc:
+  # Only needed for /npc skin <name> <image-url>. 
+  # You can get a free key from https://account.mineskin.org.
+  mineskin-api-key: ""
+
 random-drops:
   enabled: false
   # dynamic = fresh random drop on every break.

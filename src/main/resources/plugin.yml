@@ -146,6 +146,18 @@ commands:
     description: Make a player say something or run a command.
     usage: /<command> <player> <message or /command>
     permission: hcg.sudo
+  npc:
+    description: Create and manage player NPCs with skins, holograms, and click actions.
+    usage: |
+      /<command> create|remove|info|teleport <name>  -  /<command> list
+      /<command> skin <name> <player|url|reset>
+      /<command> displayname <name> <text|none>
+      /<command> equipment <name> <set|clear|list> [slot]
+      /<command> glowing <name> <color|off>  -  /<command> collidable|showintab <name> <on|off>
+      /<command> movehere <name>  -  /<command> rotate <name> <yaw> <pitch>
+      /<command> turntoplayer <name> <on|off> [distance]  -  /<command> cooldown <name> <seconds>
+      /<command> action <name> <trigger> <add|remove|list|clear> ...
+    permission: hcg.npc
 
 permissions:
   hcg.*:
@@ -181,6 +193,7 @@ permissions:
       hcg.spawner: true
       hcg.spawnmob: true
       hcg.sudo: true
+      hcg.npc: true
   hcg.help:
     default: op
   hcg.healthdecay:
@@ -238,4 +251,6 @@ permissions:
   hcg.spawnmob:
     default: op
   hcg.sudo:
+    default: op
+  hcg.npc:
     default: op

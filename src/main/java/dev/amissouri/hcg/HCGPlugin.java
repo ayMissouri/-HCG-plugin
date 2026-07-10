@@ -13,6 +13,7 @@ public final class HCGPlugin extends JavaPlugin {
     private LavaRaiseManager lavaRaiseManager;
     private VolcanoManager volcanoManager;
     private HungerGamesManager hungerGamesManager;
+    private NpcManager npcManager;
 
     @Override
     public void onEnable() {
@@ -25,12 +26,16 @@ public final class HCGPlugin extends JavaPlugin {
         lavaRaiseManager = new LavaRaiseManager(this);
         volcanoManager = new VolcanoManager(this);
         hungerGamesManager = new HungerGamesManager(this);
+        npcManager = new NpcManager(this);
 
         getServer().getPluginManager().registerEvents(new KillListener(this, decayManager), this);
         getServer().getPluginManager().registerEvents(new FreezeListener(freezeManager), this);
         getServer().getPluginManager().registerEvents(new RandomDropsListener(randomDropsManager), this);
         getServer().getPluginManager().registerEvents(lavaRaiseManager.burnTracker(), this);
         getServer().getPluginManager().registerEvents(new VolcanoListener(), this);
+        if (npcManager.isAvailable()) {
+            getServer().getPluginManager().registerEvents(new NpcListener(npcManager), this);
+        }
 
         register("hcg", new HcgCommand());
         register("healthdecay", new DecayCommand(this, decayManager));
@@ -68,6 +73,9 @@ public final class HCGPlugin extends JavaPlugin {
         register("spawner", new SpawnerCommand());
         register("spawnmob", new SpawnMobCommand());
         register("sudo", new SudoCommand());
+        register("npc", new NpcCommand(this, npcManager));
+
+        npcManager.load();
 
         if (getConfig().getBoolean("enabled", true)) {
             decayManager.start();
@@ -87,6 +95,9 @@ public final class HCGPlugin extends JavaPlugin {
         }
         if (hungerGamesManager != null) {
             hungerGamesManager.shutdown();
+        }
+        if (npcManager != null) {
+            npcManager.shutdown();
         }
     }
 
