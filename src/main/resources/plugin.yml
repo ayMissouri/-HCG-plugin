@@ -32,6 +32,14 @@ commands:
     description: Set a volcano center and trigger eruptions, manually or on a daily schedule.
     usage: /<command> [setcenter|erupt|stop|schedule|duration|status]
     permission: hcg.volcano
+  hungergames:
+    description: Hunger Games match control, spawn scattering and a staged shrinking world border.
+    usage: |
+      /<command> addspawn|delspawn|spawns|clearspawns|scatter
+      /<command> setcenter|start|stop|status
+      /<command> countdown|startsize|expandsize|finalsize|expandtime|stages|stagetime|shrinktime <value>
+    aliases: [hg]
+    permission: hcg.hungergames
   flyspeed:
     description: Set your fly speed (1-10, default 1).
     usage: /<command> <1-10>
@@ -149,6 +157,7 @@ permissions:
       hcg.randomdrops: true
       hcg.lavaraise: true
       hcg.volcano: true
+      hcg.hungergames: true
       hcg.flyspeed: true
       hcg.fly: true
       hcg.gamemode: true
@@ -181,6 +190,8 @@ permissions:
   hcg.lavaraise:
     default: op
   hcg.volcano:
+    default: op
+  hcg.hungergames:
     default: op
   hcg.flyspeed:
     default: op

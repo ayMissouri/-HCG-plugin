@@ -39,6 +39,16 @@ Implementation notes:
 - With `burn-placed-blocks` on (default), burnable blocks that were **placed by a player** (tracked from placement, persisted across restarts) burn away as the lava passes them.
 - Packets are paced (`blocks-per-tick`, default 40000 positions/tick) and sent for all chunks each player can see (`render-radius`, default = full view distance). The region is the world border, capped at `max-region` blocks.
 
+## Hunger Games
+
+`/hungergames` (alias `/hg`) runs a battle-royale style match around the vanilla world border:
+
+1. Stand where you want each pedestal and run `/hg addspawn` (repeat for as many spawns as you need; `spawns`, `delspawn <#>`, `clearspawns` manage them).
+2. `/hg setcenter` where the border should be centered, then `/hg scatter` teleports every online player to a random distinct spawn. If more players are online than spawns exist, it errors instead of doubling up.
+3. `/hg start [seconds]` locks the border at the **start size**, shows an on-screen title countdown, then quickly expands the border to the **expanded size**. After that it works like the Fortnite storm: it holds for `stagetime` seconds, shrinks one stage over `shrinktime` seconds, and repeats until the **final size** is reached, with chat warnings and titles along the way. `/hg stop` cancels the sequence and resets the border to whatever it was before the game started.
+
+Everything is configurable in-game (persisted to `config.yml`): `countdown`, `startsize`, `expandsize`, `finalsize`, `expandtime`, `stages`, `stagetime`, `shrinktime`, e.g. `/hg stages 8`.
+
 ## Utility commands
 
 | Command                                 | Effect                                                           |

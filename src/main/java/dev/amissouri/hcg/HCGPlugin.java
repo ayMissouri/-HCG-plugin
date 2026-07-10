@@ -12,6 +12,7 @@ public final class HCGPlugin extends JavaPlugin {
     private RandomDropsManager randomDropsManager;
     private LavaRaiseManager lavaRaiseManager;
     private VolcanoManager volcanoManager;
+    private HungerGamesManager hungerGamesManager;
 
     @Override
     public void onEnable() {
@@ -23,6 +24,7 @@ public final class HCGPlugin extends JavaPlugin {
         randomDropsManager = new RandomDropsManager(this);
         lavaRaiseManager = new LavaRaiseManager(this);
         volcanoManager = new VolcanoManager(this);
+        hungerGamesManager = new HungerGamesManager(this);
 
         getServer().getPluginManager().registerEvents(new KillListener(this, decayManager), this);
         getServer().getPluginManager().registerEvents(new FreezeListener(freezeManager), this);
@@ -35,6 +37,7 @@ public final class HCGPlugin extends JavaPlugin {
         register("randomdrops", new RandomDropsCommand(this, randomDropsManager));
         register("lavaraise", new LavaRaiseCommand(lavaRaiseManager));
         register("volcano", new VolcanoCommand(volcanoManager));
+        register("hungergames", new HungerGamesCommand(hungerGamesManager));
         register("flyspeed", new FlySpeedCommand());
         register("fly", new FlyCommand());
         GamemodeCommand gamemode = new GamemodeCommand();
@@ -81,6 +84,9 @@ public final class HCGPlugin extends JavaPlugin {
         }
         if (volcanoManager != null) {
             volcanoManager.shutdown();
+        }
+        if (hungerGamesManager != null) {
+            hungerGamesManager.shutdown();
         }
     }
 
