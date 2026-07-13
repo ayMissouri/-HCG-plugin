@@ -17,6 +17,7 @@ public final class HCGPlugin extends JavaPlugin {
     private VanishManager vanishManager;
     private GravesManager gravesManager;
     private HealthShareManager healthShareManager;
+    private FirstToManager firstToManager;
 
     @Override
     public void onEnable() {
@@ -33,6 +34,7 @@ public final class HCGPlugin extends JavaPlugin {
         vanishManager = new VanishManager(this);
         gravesManager = new GravesManager(this);
         healthShareManager = new HealthShareManager(this);
+        firstToManager = new FirstToManager(this);
 
         getServer().getPluginManager().registerEvents(new KillListener(this, decayManager), this);
         getServer().getPluginManager().registerEvents(new FreezeListener(freezeManager), this);
@@ -42,6 +44,7 @@ public final class HCGPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new VanishListener(vanishManager), this);
         getServer().getPluginManager().registerEvents(new GravesListener(gravesManager), this);
         getServer().getPluginManager().registerEvents(new HealthShareListener(healthShareManager), this);
+        getServer().getPluginManager().registerEvents(new FirstToListener(firstToManager), this);
         if (npcManager.isAvailable()) {
             getServer().getPluginManager().registerEvents(new NpcListener(npcManager), this);
         }
@@ -86,6 +89,7 @@ public final class HCGPlugin extends JavaPlugin {
         register("npc", new NpcCommand(this, npcManager));
         register("graves", new GravesCommand(gravesManager));
         register("healthshare", new HealthShareCommand(healthShareManager));
+        register("firstto", new FirstToCommand(firstToManager));
 
         npcManager.load();
         gravesManager.load();
@@ -114,6 +118,9 @@ public final class HCGPlugin extends JavaPlugin {
         }
         if (healthShareManager != null) {
             healthShareManager.shutdown();
+        }
+        if (firstToManager != null) {
+            firstToManager.shutdown();
         }
     }
 

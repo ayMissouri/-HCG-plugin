@@ -101,6 +101,15 @@ public final class HcgCommand implements CommandExecutor, TabCompleter {
                     new Entry("/healthshare teams", "List the teams, their members, and their shared health."),
                     new Entry("/healthshare status", "Show whether health share is running."),
                     new Entry("/healthshare stop", "Disband the teams and stop sharing health."))),
+            new Category("First To", List.of(
+                    new Entry("/firstto", "Open the first-to settings menu."),
+                    new Entry("/firstto craft", "Roll a random craftable item, first to craft it wins."),
+                    new Entry("/firstto obtain", "Roll any survival item, first to get one wins."),
+                    new Entry("/firstto stop", "Cancel the current round."),
+                    new Entry("/firstto status", "Show the current target and toggles."),
+                    new Entry("/firstto nether <on|off>", "Allow nether-only items as targets."),
+                    new Entry("/firstto end <on|off>", "Allow end-only items as targets."),
+                    new Entry("/firstto tpspawn <on|off>", "Teleport everyone to spawn when someone wins."))),
             new Category("Admin Commands", List.of(
                     new Entry("/hcg help [category]", "Show this help menu."),
                     new Entry("/flyspeed <1-10>", "Set your fly speed (vanilla default is 1)."),

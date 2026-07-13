@@ -146,6 +146,29 @@ healthshare:
   teams-entry: "&6{team}: &e{members} &7({health} hearts)"
   teams-entry-dead: "&6{team}: &e{members} &7(all dead)"
 
+firstto:
+  gui-title: "&8Rolling the item..."
+  rolling-broadcast: "&6The item machine is rolling..."
+  craft-target-broadcast: "&4First to craft &e{item}&4 wins!"
+  obtain-target-broadcast: "&4First to obtain &e{item}&4 wins!"
+  action-craft: "craft"
+  action-obtain: "obtain"
+  winner-broadcast: "&6{player} &awas the first to {action} &e{item}&a and wins! &7({time})"
+  winner-title: "&6&l{player} wins!"
+  winner-subtitle: "&eFirst to {action} {item} in {time}"
+  tp-broadcast: "&6Everyone has been teleported to spawn."
+  stopped-broadcast: "&aThe first-to round has been cancelled."
+  already-running: "&eA round is already running, stop it first with /firstto stop."
+  not-running: "&eNo round is running."
+  pool-empty: "&cNo eligible items with the current nether/end toggles."
+  status-rolling: "&6First-to: the machine is rolling..."
+  status-running: "&6First-to: first to {action} &e{item}&6."
+  status-idle: "&6First-to: no round running."
+  status-settings: "&6Nether items {nether}, end items {end}, tp to spawn on win {tpspawn}."
+  nether-set: "&aNether items turned {state}."
+  end-set: "&aEnd items turned {state}."
+  tpspawn-set: "&aTeleport-to-spawn on win turned {state}."
+
 commands:
   heal:
     done: "&aHealed {who}."

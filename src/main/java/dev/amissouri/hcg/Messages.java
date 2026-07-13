@@ -1,9 +1,11 @@
 package dev.amissouri.hcg;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -28,8 +30,48 @@ public final class Messages {
         config = YamlConfiguration.loadConfiguration(file);
         InputStream bundled = plugin.getResource("messages.yml");
         if (bundled != null) {
-            config.setDefaults(YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(bundled, StandardCharsets.UTF_8)));
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(bundled, StandardCharsets.UTF_8));
+            upgradeFile(plugin, file, defaults);
+            config.setDefaults(defaults);
+        }
+    }
+
+    /**
+     * Keeps the data-folder messages.yml current across plugin updates without wiping user edits:
+     * keys new to this version are added, and values the user never touched follow the bundled
+     * text. A snapshot of the previously bundled defaults (.messages-defaults.yml) is what tells
+     * a user edit apart from an outdated default.
+     */
+    private static void upgradeFile(HCGPlugin plugin, File file, YamlConfiguration bundled) {
+        File snapshotFile = new File(plugin.getDataFolder(), ".messages-defaults.yml");
+        YamlConfiguration previous = snapshotFile.exists()
+                ? YamlConfiguration.loadConfiguration(snapshotFile)
+                : null;
+        boolean changed = false;
+        for (String key : bundled.getKeys(true)) {
+            if (bundled.isConfigurationSection(key)) {
+                continue;
+            }
+            Object value = bundled.get(key);
+            if (!config.contains(key)) {
+                config.set(key, value);
+                config.setComments(key, bundled.getComments(key));
+                changed = true;
+            } else if (previous != null
+                    && Objects.equals(config.get(key), previous.get(key))
+                    && !Objects.equals(value, previous.get(key))) {
+                config.set(key, value);
+                changed = true;
+            }
+        }
+        try {
+            if (changed) {
+                config.save(file);
+            }
+            bundled.save(snapshotFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("Could not update messages.yml: " + e.getMessage());
         }
     }
 

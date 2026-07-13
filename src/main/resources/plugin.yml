@@ -160,6 +160,13 @@ commands:
     usage: /<command> <players-per-team> | stop | status | teams
     aliases: [hshare]
     permission: hcg.healthshare
+  firstto:
+    description: First-to item race, a slot machine rolls a target item and the first player to craft or obtain it wins.
+    usage: |
+      /<command> craft|obtain|stop|status
+      /<command> nether|end|tpspawn <on|off>
+    aliases: [ftc, firsttocraft]
+    permission: hcg.firstto
   npc:
     description: Create and manage player NPCs with skins, holograms, and click actions.
     usage: |
@@ -211,6 +218,7 @@ permissions:
       hcg.npc: true
       hcg.graves: true
       hcg.healthshare: true
+      hcg.firstto: true
   hcg.help:
     default: op
   hcg.healthdecay:
@@ -276,4 +284,6 @@ permissions:
   hcg.graves:
     default: op
   hcg.healthshare:
+    default: op
+  hcg.firstto:
     default: op
