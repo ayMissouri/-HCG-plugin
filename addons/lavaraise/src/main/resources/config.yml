@@ -1,0 +1,34 @@
+lava-raise:
+  enabled: false
+  # World-clock day ticks (0-23999). 0 = 06:00, 6000 = noon, 18000 = midnight.
+  start-time: 0
+  end-time: 12000
+  # Seconds for the lava to travel from bedrock to max-y (and back down).
+  rise-duration-seconds: 300
+  # The lava stops rising at this Y level.
+  max-y: 62
+  # When true, oceans/water look flooded too and don't protect from burning.
+  replace-water: false
+  # When true, PLAYER-PLACED burnable blocks (wood, wool, leaves, ...) burn as the lava passes them.
+  burn-placed-blocks: true
+  # When true, mobs in the lava burn and take damage like players.
+  damage-mobs: false
+  # The lava is client-side packets only (no real blocks).
+  # blocks-per-tick: positions scanned and sent per tick across all players.
+  # max-region: region cap in blocks across.
+  # render-radius: chunks around each player that get the lava visual.
+  # Automatically capped at the server view distance.
+  blocks-per-tick: 40000
+  max-region: 512
+  render-radius: 32
+
+volcano:
+  # Default eruption length in seconds.
+  duration-seconds: 20
+  # Whether eruptions shake nearby players' screens.
+  shake-enabled: false
+  # Players within this many blocks of the center get screen shake.
+  shake-radius: 150
+  # Daily scheduled eruption at a world-clock time.
+  schedule-enabled: false
+  erupt-time: 13000

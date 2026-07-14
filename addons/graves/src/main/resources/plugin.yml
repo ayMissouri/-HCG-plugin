@@ -1,0 +1,17 @@
+name: HCGplugin-Graves
+version: '${project.version}'
+main: dev.amissouri.hcg.graves.GravesPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Death graves that store items and XP, addon for HCGplugin.
+author: amissouri
+
+commands:
+  graves:
+    description: Toggle death graves that store items and XP, force remove the grave you're looking at.
+    usage: /<command> [on|off|status|remove]
+    permission: hcg.graves
+
+permissions:
+  hcg.graves:
+    default: op

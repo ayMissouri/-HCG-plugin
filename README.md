@@ -1,6 +1,27 @@
 # HCGplugin
 
-All-in-one PaperMC 1.21.1+ plugin with utility commands, minigames and helpers. All commands default to op-only.
+PaperMC 1.21.1+ plugin split into a **base plugin** plus **installable feature addons**. The base
+provides the `/hcg` help menu and the always-on Admin, Item, and World commands; each game mode or
+feature (Health Decay, Lava Raise, NPCs, ...) ships as its own addon JAR that depends on the base.
+Install only the addons you want. All commands default to op-only.
+
+## Modules
+
+Click an addon for its full docs (commands, config, permissions).
+
+| JAR | What it adds | Commands |
+| --- | --- | --- |
+| `HCGplugin` (base, **required**) | `/hcg` help, Admin/Item/World commands | fly, flyspeed, gmc/gms/gmsp/gma, tpall, freeze, invsee, heal, feed, god, vanish, burn, nickname, sudo, anvil, craft, enderchest, enchant, hat, name, lore, lightning, remove, spawner, spawnmob |
+| [`HCGplugin-HealthDecay`](addons/healthdecay/README.md) | Health decay game mode | `/healthdecay` |
+| [`HCGplugin-RandomDrops`](addons/randomdrops/README.md) | Random block drops game mode | `/randomdrops` |
+| [`HCGplugin-LavaRaise`](addons/lavaraise/README.md) | Rising lava event | `/lavaraise`, `/volcano` |
+| [`HCGplugin-HungerGames`](addons/hungergames/README.md) | Battle-royale border game | `/hungergames` |
+| [`HCGplugin-NPCs`](addons/npcs/README.md) | Packet-based player NPCs | `/npc` |
+| [`HCGplugin-Graves`](addons/graves/README.md) | Death graves | `/graves` |
+| [`HCGplugin-HealthShare`](addons/healthshare/README.md) | Shared team health pools | `/healthshare` |
+| [`HCGplugin-FirstTo`](addons/firstto/README.md) | First-to item race | `/firstto` |
+
+Each addon hard-depends on the base. Every module has its own config and messages in its own `plugins/<name>/` folder.
 
 ## Building
 
@@ -8,92 +29,27 @@ All-in-one PaperMC 1.21.1+ plugin with utility commands, minigames and helpers. 
 mvn package
 ```
 
-The jar is produced at `target/HCGplugin-<version>.jar`. Drop it into your server's `plugins/` folder and restart.
+This is a multi-module Maven build (requires JDK 21). Every module's JAR is collected into a
+`dist/` folder at the repo root (each module also keeps its own copy under `target/`):
+
+- `dist/HCGplugin-<version>.jar` (base)
+- `dist/HCGplugin-<Feature>-<version>.jar` (one per addon)
+
+Drop `HCGplugin-<version>.jar` into your server's `plugins/` folder (it is required), then add
+whichever addon JARs you want, and restart. To build a single addon and the base only:
+`mvn -pl addons/lavaraise -am package`.
 
 ## Help
 
 `/hcg help` or `/hcg` shows the clickable category list.
 Click a category or type `/hcg help <category> [page]` to see its commands, paginated with Back/Prev/Next arrows and click-to-fill command entries. Category names are matched loosely: `/hcg help admin` works.
 
-## Health decay game mode
+## Base commands
 
-Everyone's max health slowly ticks down until it bottoms out at 3 hearts. When one player kills another, directly or indirectly (knocking them into lava, player-lit TNT, trap kills that follow a fight) everyone's health is fully restored and the decay starts over.
+These ship with the base `HCGplugin` and are always available. The game modes and other features live
+in the addon docs linked under [Modules](#modules) above.
 
-## Random drops game mode
-
-While enabled, every block broken in survival drops one random survival-obtainable item or block instead of its normal drop (creative-/command-only things like command blocks, barriers, spawn eggs, and the debug stick are excluded). XP and container contents still drop normally.
-
-Two modes:
-
-- **dynamic** (default): every break rolls a fresh random drop.
-- **static**: each block type is assigned one fixed random drop (grass -> obsidian means grass _always_ drops obsidian). The table is derived from a seed saved in `config.yml`, so it survives restarts; `/randomdrops reroll` generates a new table.
-
-## Lava raise game mode
-
-While enabled, every Minecraft day at the configured world-clock **start time**, lava rises layer by layer from bedrock up to the configured **max Y** over the configured **travel time**; it holds there until the **end time**, then drains back down over the same travel time.
-
-Implementation notes:
-
-- **The lava is a client-side illusion.** It's sent as block-change packets, so the clients render real animated lava (fog, swim physics included) while the server world never changes, nothing can burn, flow, or need cleanup.
-- Burning is server-side: players at or below the lava level catch fire and take lava-rate damage (water protects them unless `replace-water` is on). Creative/spectator players are unaffected; mobs burn too if `damage-mobs` is on.
-- With `burn-placed-blocks` on (default), burnable blocks that were **placed by a player** (tracked from placement, persisted across restarts) burn away as the lava passes them.
-- Packets are paced (`blocks-per-tick`, default 40000 positions/tick) and sent for all chunks each player can see (`render-radius`, default = full view distance). The region is the world border, capped at `max-region` blocks.
-
-## Hunger Games
-
-`/hungergames` (alias `/hg`) runs a battle-royale style match around the vanilla world border:
-
-1. Stand where you want each pedestal and run `/hg addspawn` (repeat for as many spawns as you need; `spawns`, `delspawn <#>`, `clearspawns` manage them).
-2. `/hg setcenter` where the border should be centered, then `/hg scatter` teleports every online player to a random distinct spawn. If more players are online than spawns exist, it errors instead of doubling up.
-3. `/hg start [seconds]` locks the border at the **start size**, shows an on-screen title countdown, then quickly expands the border to the **expanded size**. After that it works like the Fortnite storm: it holds for `stagetime` seconds, shrinks one stage over `shrinktime` seconds, and repeats until the **final size** is reached, with chat warnings and titles along the way. `/hg stop` cancels the sequence and resets the border to whatever it was before the game started.
-
-Everything is configurable in-game (persisted to `config.yml`): `countdown`, `startsize`, `expandsize`, `finalsize`, `expandtime`, `stages`, `stagetime`, `shrinktime`, e.g. `/hg stages 8`.
-
-## Graves
-
-`/graves on|off` toggles death graves (off by default). When enabled, a player's items and full XP are stored in a player-head grave at their death location instead of dropping everywhere. Only the owner can collect their grave, right-click or break the head and everything goes back into their inventory (overflow drops at the grave). Graves are immune to explosions, pistons, and flowing liquids, and survive restarts via `graves.yml`.
-
-OPs can look at a grave and run `/graves remove` to force remove it, dropping its items and XP on the floor.
-
-## NPCs
-
-`/npc` creates NPCs. They are packet-based so no real entity exists on the server, they can't be pushed, damaged, or killed, and they survive restarts via `npcs.yml`.
-
-1. `/npc create <name>` spawns an NPC where you stand, facing the way you face.
-2. `/npc skin <name> <player>` fetches any Minecraft account's skin straight from Mojang. `/npc skin <name> <image-url>` generates a skin from a texture image via MineSkin (`mineskin-api-key` in `config.yml`).
-3. `/npc displayname <name> <text>` sets the floating name above the head (`&` colors, `|` for extra lines, `none` to hide). The real nametag is always hidden via a scoreboard team.
-4. `/npc action <name> <trigger> add <type> <...>` makes clicks do things.
-
-Triggers: `left_click`, `right_click`, `any_click`. Action types:
-
-| Action                          | Effect                                                       |
-| ------------------------------- | ------------------------------------------------------------ |
-| `message <text>`                | Send the clicker a message (`&` colors, `{player}`)          |
-| `player_command <cmd>`          | Run a command as the clicker                                 |
-| `console_command <cmd>`         | Run a command from console (`{player}` placeholder)          |
-| `sound <key> [volume] [pitch]`  | Play a sound to the clicker (e.g. `entity.villager.yes`)     |
-| `wait <ticks>`                  | Pause before the remaining actions run                       |
-
-Actions run in order per trigger; `/npc action <name> <trigger> list|remove <#>|clear` manages them, and `/npc cooldown <name> <seconds>` rate-limits clicks per player.
-
-| Command                                    | Effect                                                     |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| `/npc create <name>` / `remove <name>`     | Create or delete an NPC                                    |
-| `/npc list` / `info <name>`                | List NPCs, or show one NPC's settings                      |
-| `/npc skin <name> <player\|url\|reset>`    | Set the skin from a player name or image URL               |
-| `/npc displayname <name> <text\|none>`     | Floating name; `&` colors, `\|` for lines                  |
-| `/npc equipment <name> set <slot>`         | Equip your held item (empty hand clears the slot)          |
-| `/npc equipment <name> <clear\|list>`      | Clear a slot or list equipment                             |
-| `/npc glowing <name> <color\|off>`         | Glow outline in any team color                             |
-| `/npc collidable <name> <on\|off>`         | Whether players collide with the NPC                       |
-| `/npc showintab <name> <on\|off>`          | Show the NPC in the tab list                               |
-| `/npc movehere <name>` / `teleport <name>` | Move the NPC to you / teleport yourself to it              |
-| `/npc rotate <name> <yaw> <pitch>`         | Set its facing                                             |
-| `/npc turntoplayer <name> <on\|off> [dist]`| Head-tracks each nearby player (default 5 blocks)          |
-| `/npc cooldown <name> <seconds>`           | Per-player delay between click actions                     |
-| `/npc action <name> <trigger> ...`         | `add <type> <...>`, `remove <#>`, `list`, `clear`          |
-
-## Utility commands
+### Utility commands
 
 | Command                                 | Effect                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
@@ -114,7 +70,7 @@ Actions run in order per trigger; `/npc action <name> <trigger> list|remove <#>|
 | `/nickname [player] <text\|reset>`      | Set a display name for chat + tab list; `&` colors               |
 | `/sudo <player> <msg or /cmd>`          | Make a player chat a message or run a command                    |
 
-## Item commands
+### Item commands
 
 | Command                          | Effect                                                   |
 | -------------------------------- | -------------------------------------------------------- |
@@ -126,7 +82,7 @@ Actions run in order per trigger; `/npc action <name> <trigger> list|remove <#>|
 | `/name <text\|reset>`            | Rename held item; `&` color codes                        |
 | `/lore <text\|reset>`            | Set held item lore; `&` colors, `\|` splits lines        |
 
-## World commands
+### World commands
 
 | Command                           | Effect                                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------ |

@@ -1,0 +1,4 @@
+npc:
+  # Only needed for /npc skin <name> <image-url>.
+  # You can get a free key from https://account.mineskin.org.
+  mineskin-api-key: ""

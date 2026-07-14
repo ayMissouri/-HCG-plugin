@@ -1,0 +1,21 @@
+name: HCGplugin-HealthDecay
+version: '${project.version}'
+main: dev.amissouri.hcg.healthdecay.HealthDecayPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Health decay game mode addon for HCGplugin.
+author: amissouri
+
+commands:
+  healthdecay:
+    description: Control the health decay game mode.
+    usage: |
+      /<command> on|off|status|restore
+      /<command> interval <seconds>
+      /<command> amount <hearts>
+    aliases: [hdecay, hd]
+    permission: hcg.healthdecay
+
+permissions:
+  hcg.healthdecay:
+    default: op

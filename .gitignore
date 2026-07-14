@@ -1,6 +1,9 @@
 # Maven build output
 target/
 
+# Collected plugin JARs (mvn package copies them here)
+dist/
+
 # IDE files
 .idea/
 *.iml

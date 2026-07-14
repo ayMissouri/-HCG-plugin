@@ -1,0 +1,18 @@
+name: HCGplugin-RandomDrops
+version: '${project.version}'
+main: dev.amissouri.hcg.randomdrops.RandomDropsPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Random block drops game mode addon for HCGplugin.
+author: amissouri
+
+commands:
+  randomdrops:
+    description: Control the random block drops game mode.
+    usage: /<command> [on|off|status]
+    aliases: [rdrops, rd]
+    permission: hcg.randomdrops
+
+permissions:
+  hcg.randomdrops:
+    default: op

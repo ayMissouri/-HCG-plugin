@@ -1,0 +1,20 @@
+name: HCGplugin-FirstTo
+version: '${project.version}'
+main: dev.amissouri.hcg.firstto.FirstToPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: First-to item race with a slot-machine roll, addon for HCGplugin.
+author: amissouri
+
+commands:
+  firstto:
+    description: First-to item race, a slot machine rolls a target item and the first player to craft or obtain it wins.
+    usage: |
+      /<command> craft|obtain|stop|status
+      /<command> nether|end|tpspawn <on|off>
+    aliases: [ftc, firsttocraft]
+    permission: hcg.firstto
+
+permissions:
+  hcg.firstto:
+    default: op

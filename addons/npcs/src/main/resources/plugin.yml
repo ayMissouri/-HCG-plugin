@@ -1,0 +1,25 @@
+name: HCGplugin-NPCs
+version: '${project.version}'
+main: dev.amissouri.hcg.npcs.NpcsPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Packet-based player NPCs with skins, holograms, and click actions, addon for HCGplugin.
+author: amissouri
+
+commands:
+  npc:
+    description: Create and manage player NPCs with skins, holograms, and click actions.
+    usage: |
+      /<command> create|remove|info|teleport <name>  -  /<command> list
+      /<command> skin <name> <player|url|reset>
+      /<command> displayname <name> <text|none>
+      /<command> equipment <name> <set|clear|list> [slot]
+      /<command> glowing <name> <color|off>  -  /<command> collidable|showintab <name> <on|off>
+      /<command> movehere <name>  -  /<command> rotate <name> <yaw> <pitch>
+      /<command> turntoplayer <name> <on|off> [distance]  -  /<command> cooldown <name> <seconds>
+      /<command> action <name> <trigger> <add|remove|list|clear> ...
+    permission: hcg.npc
+
+permissions:
+  hcg.npc:
+    default: op

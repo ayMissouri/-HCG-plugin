@@ -1,0 +1,9 @@
+random-drops:
+  enabled: false
+  # dynamic = fresh random drop on every break.
+  # static = each block type always drops the same random item.
+  mode: dynamic
+  # When true, every drop gets 1-3 random enchantments at random levels.
+  enchanted: false
+  # When true, mobs also drop a random item instead of their normal loot.
+  mobs: false

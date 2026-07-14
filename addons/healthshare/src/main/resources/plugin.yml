@@ -1,0 +1,18 @@
+name: HCGplugin-HealthShare
+version: '${project.version}'
+main: dev.amissouri.hcg.healthshare.HealthSharePlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Teams that share a single health pool, addon for HCGplugin.
+author: amissouri
+
+commands:
+  healthshare:
+    description: Split all players into teams that share a single health pool.
+    usage: /<command> <players-per-team> | stop | status | teams
+    aliases: [hshare]
+    permission: hcg.healthshare
+
+permissions:
+  hcg.healthshare:
+    default: op

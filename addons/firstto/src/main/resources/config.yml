@@ -1,0 +1,7 @@
+first-to:
+  # Whether nether-only items can be rolled as targets.
+  include-nether: true
+  # Whether end-only items can be rolled as targets.
+  include-end: true
+  # When true, everyone is teleported to the main world spawn when someone wins.
+  tp-spawn-on-win: false

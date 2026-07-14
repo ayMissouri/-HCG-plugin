@@ -1,0 +1,24 @@
+name: HCGplugin-LavaRaise
+version: '${project.version}'
+main: dev.amissouri.hcg.lavaraise.LavaRaisePlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Daily rising lava event plus volcano eruptions, addon for HCGplugin.
+author: amissouri
+
+commands:
+  lavaraise:
+    description: Control the daily rising lava event.
+    usage: /<command> [on|off|status|start|end|duration|maxy|water|cancel]
+    aliases: [lr]
+    permission: hcg.lavaraise
+  volcano:
+    description: Set a volcano center and trigger eruptions, manually or on a daily schedule.
+    usage: /<command> [setcenter|erupt|stop|schedule|duration|status]
+    permission: hcg.volcano
+
+permissions:
+  hcg.lavaraise:
+    default: op
+  hcg.volcano:
+    default: op

@@ -1,0 +1,16 @@
+# Whether the decay game mode is running. Toggled by /healthdecay on|off.
+enabled: false
+
+decay:
+  # Seconds between each decay tick.
+  interval-seconds: 60
+  # Hearts lost per tick.
+  amount-hearts: 0.5
+  # Health will never drop below this.
+  minimum-hearts: 3.0
+  # The health everyone is restored to.
+  maximum-hearts: 10.0
+
+kill:
+  # This is the window of time in which a player can be credited for a kill.
+  credit-window-seconds: 45

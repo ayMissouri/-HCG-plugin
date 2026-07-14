@@ -1,0 +1,2 @@
+# Marker so Maven resolves ${maven.multiModuleProjectDirectory} to this repo root
+# (used by the parent pom to collect built JARs into ./dist). Safe to keep empty.

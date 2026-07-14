@@ -5,17 +5,31 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>dev.amissouri</groupId>
-    <artifactId>hcg-plugin</artifactId>
-    <version>3.2.0</version>
-    <packaging>jar</packaging>
+    <artifactId>hcg-parent</artifactId>
+    <version>4.0.0</version>
+    <packaging>pom</packaging>
 
-    <name>HCGplugin</name>
-    <description>A plugin with a broad range of features and commands</description>
+    <name>HCGplugin-Parent</name>
+    <description>HCGplugin base plugin plus its installable feature addons.</description>
 
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <paper.version>1.21.1-R0.1-SNAPSHOT</paper.version>
+        <netty.version>4.1.97.Final</netty.version>
     </properties>
+
+    <modules>
+        <module>base</module>
+        <module>addons/healthdecay</module>
+        <module>addons/randomdrops</module>
+        <module>addons/lavaraise</module>
+        <module>addons/hungergames</module>
+        <module>addons/npcs</module>
+        <module>addons/graves</module>
+        <module>addons/healthshare</module>
+        <module>addons/firstto</module>
+    </modules>
 
     <repositories>
         <repository>
@@ -24,34 +38,89 @@
         </repository>
     </repositories>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>1.21.1-R0.1-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport</artifactId>
-            <version>4.1.97.Final</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.papermc.paper</groupId>
+                <artifactId>paper-api</artifactId>
+                <version>${paper.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-transport</artifactId>
+                <version>${netty.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>dev.amissouri</groupId>
+                <artifactId>hcg-base</artifactId>
+                <version>${project.version}</version>
+                <scope>provided</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
-        <finalName>HCGplugin-${project.version}</finalName>
+        <!-- Inherited by every module: filters plugin.yml's ${project.version}. -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
+            <!-- Collect every module's built JAR into <root>/dist. Inherited by all modules;
+                 runs after the jar is built in the package phase. The parent pom and any
+                 jarless module simply have nothing to copy. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-jar-to-dist</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${maven.multiModuleProjectDirectory}/dist</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>${project.build.finalName}.jar</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Clear dist when cleaning. inherited=false so only the root (built first)
+                 wipes it, otherwise each module's clean would delete the collected JARs. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>${maven.multiModuleProjectDirectory}/dist</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
             </plugin>
         </plugins>
     </build>

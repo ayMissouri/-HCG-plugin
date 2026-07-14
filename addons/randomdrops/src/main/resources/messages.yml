@@ -1,0 +1,15 @@
+# Messages for the Random Drops addon. Base 'general.*' keys are provided by HCGplugin.
+randomdrops:
+  enabled-broadcast: "&dRandom drops enabled ({mode} mode)!"
+  disabled-broadcast: "&aRandom drops disabled."
+  already-enabled: "&eRandom drops are already enabled."
+  not-enabled: "&eRandom drops are not enabled."
+  status: "&6Random drops are {state} in {mode} mode, random enchants {enchants}, mob drops {mobs}."
+  mode-set: "&aRandom drops mode set to {mode}."
+  mode-usage: "&cUsage: /randomdrops mode <dynamic|static>"
+  enchants-set: "&aRandom enchants turned {state}."
+  enchants-usage: "&cUsage: /randomdrops enchants <on|off>"
+  mobs-set: "&aRandom mob drops turned {state}."
+  mobs-usage: "&cUsage: /randomdrops mobs <on|off>"
+  rerolled: "&aStatic drop table rerolled, every block now has a new fixed drop."
+  rerolled-short: "&aStatic drop table rerolled."

@@ -1,0 +1,21 @@
+name: HCGplugin-HungerGames
+version: '${project.version}'
+main: dev.amissouri.hcg.hungergames.HungerGamesPlugin
+api-version: '1.21'
+depend: [HCGplugin]
+description: Hunger Games match control and shrinking world border, addon for HCGplugin.
+author: amissouri
+
+commands:
+  hungergames:
+    description: Hunger Games match control, spawn scattering and a staged shrinking world border.
+    usage: |
+      /<command> addspawn|delspawn|spawns|clearspawns|scatter
+      /<command> setcenter|start|stop|status
+      /<command> countdown|startsize|expandsize|finalsize|expandtime|stages|stagetime|shrinktime <value>
+    aliases: [hg]
+    permission: hcg.hungergames
+
+permissions:
+  hcg.hungergames:
+    default: op

@@ -1,0 +1,14 @@
+# Messages for the Health Decay addon. Base 'general.*' keys are provided by HCGplugin.
+healthdecay:
+  start-broadcast: "&4Health decay has begun!"
+  stop-broadcast: "&aHealth decay has been disabled."
+  kill-broadcast: "&c{killer} &6took &c{victim}&6's life, everyone's health has been restored!"
+  bottomed-out: "&4Health has reached {hearts} hearts."
+  already-running: "&eHealth decay is already running."
+  not-running: "&eHealth decay is not running."
+  restored: "&aEveryone's health has been restored."
+  interval-set: "&aDecay interval set to {seconds}s."
+  amount-set: "&aDecay amount set to {hearts} heart(s) per tick."
+  status-state: "&6Health decay is {state}."
+  status-health: "&6Current max health: {current} hearts (min: {floor})"
+  status-rate: "&6Losing {amount} heart(s) every {seconds}s."

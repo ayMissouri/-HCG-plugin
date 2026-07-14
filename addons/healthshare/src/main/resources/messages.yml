@@ -1,0 +1,16 @@
+# Messages for the Health Share addon. Base 'general.*' keys are provided by HCGplugin.
+healthshare:
+  started-broadcast: "&4Health share has begun! {teams} team(s) of up to {size} players, each team shares one health pool."
+  stopped-broadcast: "&aHealth share disabled, everyone's health is their own again."
+  not-running: "&eHealth share is not running."
+  size-too-small: "&cTeam size must be at least {min}."
+  not-enough-players: "&cNeed at least {min} non-spectator players online to start."
+  your-team: "&6You are on &e{team}&6, sharing health with: &e{members}"
+  your-team-alone: "&6You are on &e{team}&6 by yourself, the odd one out."
+  teammate-joined: "&6{player} joined your team and now shares your health."
+  team-wiped: "&4{victim} died and took all of {team} down with them!"
+  status-running: "&6Health share is running: {teams} team(s) of up to {size} players."
+  status-stopped: "&6Health share is not running."
+  teams-header: "&6Teams ({count}):"
+  teams-entry: "&6{team}: &e{members} &7({health} hearts)"
+  teams-entry-dead: "&6{team}: &e{members} &7(all dead)"

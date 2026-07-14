@@ -1,0 +1,175 @@
+name: HCGplugin
+version: '${project.version}'
+main: dev.amissouri.hcg.HCGPlugin
+api-version: '1.21'
+description: Base plugin for HCGplugin. Provides the /hcg help menu plus Admin, Item, and World commands. Feature categories install as separate addons.
+author: amissouri
+
+commands:
+  hcg:
+    description: HCGplugin help menu.
+    usage: /<command> help [category] [page]
+    permission: hcg.help
+  flyspeed:
+    description: Set your fly speed (1-10, default 1).
+    usage: /<command> <1-10>
+    permission: hcg.flyspeed
+  fly:
+    description: Toggle flight in any gamemode.
+    usage: /<command>
+    permission: hcg.fly
+  gmc:
+    description: Switch to creative mode.
+    usage: /<command> [player]
+    permission: hcg.gamemode
+  gms:
+    description: Switch to survival mode.
+    usage: /<command> [player]
+    permission: hcg.gamemode
+  gmsp:
+    description: Switch to spectator mode.
+    usage: /<command> [player]
+    permission: hcg.gamemode
+  gma:
+    description: Switch to adventure mode.
+    usage: /<command> [player]
+    permission: hcg.gamemode
+  tpall:
+    description: Teleport all other players to you, your crosshair target, or a player.
+    usage: /<command> <here|looking|player>
+    permission: hcg.tpall
+  freeze:
+    description: Freeze or unfreeze a player, or all players.
+    usage: /<command> <all|player>
+    permission: hcg.freeze
+  invsee:
+    description: Open and edit another player's inventory.
+    usage: /<command> <player>
+    permission: hcg.invsee
+  heal:
+    description: Heal yourself, a player, or everyone.
+    usage: /<command> [player|all]
+    permission: hcg.heal
+  feed:
+    description: Restore hunger for yourself, a player, or everyone.
+    usage: /<command> [player|all]
+    permission: hcg.feed
+  anvil:
+    description: Open a virtual anvil.
+    usage: /<command>
+    permission: hcg.anvil
+  craft:
+    description: Open a virtual crafting table.
+    usage: /<command>
+    permission: hcg.craft
+  enderchest:
+    description: Open your (or another player's) ender chest.
+    usage: /<command> [player]
+    aliases: [ec]
+    permission: hcg.enderchest
+  burn:
+    description: Set a player on fire.
+    usage: /<command> <player> [seconds]
+    permission: hcg.burn
+  enchant:
+    description: Enchant your held item beyond vanilla limits.
+    usage: /<command> <enchantment> <level>
+    permission: hcg.enchant
+  god:
+    description: Toggle invulnerability.
+    usage: /<command> [player]
+    permission: hcg.god
+  hat:
+    description: Wear your held item as a hat.
+    usage: /<command>
+    permission: hcg.hat
+  lore:
+    description: Set the lore of your held item (& colors, | for new lines).
+    usage: /<command> <text|reset>
+    permission: hcg.lore
+  name:
+    description: Rename your held item (& colors supported).
+    usage: /<command> <text|reset>
+    permission: hcg.name
+  nickname:
+    description: Set a player's display name (& colors supported).
+    usage: /<command> [player] <text|reset>
+    aliases: [nick]
+    permission: hcg.nickname
+  lightning:
+    description: Strike lightning where you're looking.
+    usage: /<command>
+    permission: hcg.lightning
+  remove:
+    description: Remove ground items, entities, or mobs.
+    usage: /<command> <items|entities|mobs> [hostile|neutral]
+    permission: hcg.remove
+  spawner:
+    description: Change the mob type of the spawner you're looking at.
+    usage: /<command> <mob>
+    permission: hcg.spawner
+  spawnmob:
+    description: Spawn mobs at your location.
+    usage: /<command> <mob> [amount]
+    permission: hcg.spawnmob
+  sudo:
+    description: Make a player say something or run a command.
+    usage: /<command> <player> <message or /command>
+    permission: hcg.sudo
+  vanish:
+    description: Toggle invisibility to other players.
+    usage: /<command> [player]
+    aliases: [v]
+    permission: hcg.vanish
+
+permissions:
+  hcg.help:
+    default: op
+  hcg.flyspeed:
+    default: op
+  hcg.fly:
+    default: op
+  hcg.gamemode:
+    default: op
+  hcg.tpall:
+    default: op
+  hcg.freeze:
+    default: op
+  hcg.invsee:
+    default: op
+  hcg.heal:
+    default: op
+  hcg.feed:
+    default: op
+  hcg.anvil:
+    default: op
+  hcg.craft:
+    default: op
+  hcg.enderchest:
+    default: op
+  hcg.burn:
+    default: op
+  hcg.enchant:
+    default: op
+  hcg.god:
+    default: op
+  hcg.hat:
+    default: op
+  hcg.lore:
+    default: op
+  hcg.name:
+    default: op
+  hcg.nickname:
+    default: op
+  hcg.lightning:
+    default: op
+  hcg.remove:
+    default: op
+  hcg.spawner:
+    default: op
+  hcg.spawnmob:
+    default: op
+  hcg.sudo:
+    default: op
+  hcg.vanish:
+    default: op
