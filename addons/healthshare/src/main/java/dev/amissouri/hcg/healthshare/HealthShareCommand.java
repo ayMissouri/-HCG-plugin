@@ -4,8 +4,6 @@ import dev.amissouri.hcg.Messages;
 
 import java.util.List;
 
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -51,16 +49,14 @@ public final class HealthShareCommand implements CommandExecutor, TabCompleter {
             Messages.send(sender, "healthshare.size-too-small", "min", String.valueOf(MIN_TEAM_SIZE));
             return true;
         }
-        long eligible = Bukkit.getOnlinePlayers().stream()
-                .filter(player -> player.getGameMode() != GameMode.SPECTATOR)
-                .count();
-        if (eligible < MIN_TEAM_SIZE) {
-            Messages.send(sender, "healthshare.not-enough-players", "min", String.valueOf(MIN_TEAM_SIZE));
-            return true;
-        }
-        int teams = manager.start(size);
-        Messages.broadcast("healthshare.started-broadcast",
-                "teams", String.valueOf(teams), "size", String.valueOf(size));
+        manager.start(size, MIN_TEAM_SIZE, teams -> {
+            if (teams == 0) {
+                Messages.send(sender, "healthshare.not-enough-players", "min", String.valueOf(MIN_TEAM_SIZE));
+            } else {
+                Messages.broadcast("healthshare.started-broadcast",
+                        "teams", String.valueOf(teams), "size", String.valueOf(size));
+            }
+        });
         return true;
     }
 
@@ -69,8 +65,7 @@ public final class HealthShareCommand implements CommandExecutor, TabCompleter {
             Messages.send(sender, "healthshare.not-running");
             return;
         }
-        manager.stop();
-        Messages.broadcast("healthshare.stopped-broadcast");
+        manager.stop(() -> Messages.broadcast("healthshare.stopped-broadcast"));
     }
 
     private void showStatus(CommandSender sender) {

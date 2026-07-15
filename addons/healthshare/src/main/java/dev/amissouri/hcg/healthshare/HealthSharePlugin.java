@@ -2,6 +2,8 @@ package dev.amissouri.hcg.healthshare;
 
 import java.util.List;
 
+import dev.amissouri.hcg.HcgPlatform;
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.HelpRegistry;
 import dev.amissouri.hcg.HelpRegistry.Entry;
 import dev.amissouri.hcg.Messages;
@@ -21,7 +23,11 @@ public final class HealthSharePlugin extends JavaPlugin {
     public void onEnable() {
         Messages.registerDefaults(this);
 
-        healthShareManager = new HealthShareManager(this);
+        healthShareManager = new HealthShareManager(this, new HcgScheduler(this));
+        if (HcgPlatform.isFolia()) {
+            getLogger().info("Folia does not support the scoreboard API, so team name colours are off."
+                    + " Shared health works normally.");
+        }
         getServer().getPluginManager().registerEvents(new HealthShareListener(healthShareManager), this);
         register("healthshare", new HealthShareCommand(healthShareManager));
 

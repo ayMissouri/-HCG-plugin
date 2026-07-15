@@ -2,6 +2,7 @@ name: HCGplugin-HealthShare
 version: '${project.version}'
 main: dev.amissouri.hcg.healthshare.HealthSharePlugin
 api-version: '1.21'
+folia-supported: true
 depend: [HCGplugin]
 description: Teams that share a single health pool, addon for HCGplugin.
 author: amissouri

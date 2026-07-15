@@ -1,14 +1,22 @@
 package dev.amissouri.hcg.healthshare;
+import dev.amissouri.hcg.HcgPlatform;
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.Messages;
+import dev.amissouri.hcg.Players;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.IntConsumer;
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -28,21 +36,52 @@ public final class HealthShareManager {
             NamedTextColor.GOLD, NamedTextColor.DARK_GREEN, NamedTextColor.DARK_AQUA,
             NamedTextColor.DARK_PURPLE, NamedTextColor.GRAY, NamedTextColor.WHITE);
 
-    public record ShareTeam(int id, List<UUID> members) {
-        String displayName() {
+    public static final class ShareTeam {
+
+        private final int id;
+        private final List<UUID> members = new CopyOnWriteArrayList<>();
+        private final AtomicBoolean wiping = new AtomicBoolean();
+        private volatile double pooledHealth = -1.0;
+
+        ShareTeam(int id) {
+            this.id = id;
+        }
+
+        public int id() {
+            return id;
+        }
+
+        public List<UUID> members() {
+            return members;
+        }
+
+        public String displayName() {
             return "Team " + id;
+        }
+
+        boolean claimWipe() {
+            return wiping.compareAndSet(false, true);
+        }
+
+        void releaseWipe() {
+            wiping.set(false);
+        }
+
+        boolean isWiping() {
+            return wiping.get();
         }
     }
 
     private final JavaPlugin plugin;
-    private final List<ShareTeam> teams = new ArrayList<>();
-    private final Map<UUID, ShareTeam> teamByPlayer = new HashMap<>();
-    private int teamSize;
-    private boolean enabled;
-    private boolean wiping;
+    private final HcgScheduler scheduler;
+    private final List<ShareTeam> teams = new CopyOnWriteArrayList<>();
+    private final Map<UUID, ShareTeam> teamByPlayer = new ConcurrentHashMap<>();
+    private volatile int teamSize;
+    private volatile boolean enabled;
 
-    public HealthShareManager(JavaPlugin plugin) {
+    public HealthShareManager(JavaPlugin plugin, HcgScheduler scheduler) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
     }
 
     public boolean isEnabled() {
@@ -57,92 +96,146 @@ public final class HealthShareManager {
         return List.copyOf(teams);
     }
 
-    public int start(int size) {
-        stop();
-        List<Player> players = new ArrayList<>();
-        for (Player player : Bukkit.getOnlinePlayers()) {
+    public void start(int size, int minPlayers, IntConsumer onDone) {
+        List<? extends Player> candidates = List.copyOf(Bukkit.getOnlinePlayers());
+        List<Player> eligible = Collections.synchronizedList(new ArrayList<>());
+        Players.forEach(scheduler, candidates, player -> {
             if (player.getGameMode() != GameMode.SPECTATOR) {
-                players.add(player);
+                eligible.add(player);
             }
-        }
-        Collections.shuffle(players);
-
-        teamSize = size;
-        for (int from = 0; from < players.size(); from += size) {
-            List<Player> group = players.subList(from, Math.min(from + size, players.size()));
-            ShareTeam team = new ShareTeam(teams.size() + 1, new ArrayList<>());
-            teams.add(team);
-            Team board = registerBoardTeam(team);
-            for (Player member : group) {
-                team.members().add(member.getUniqueId());
-                teamByPlayer.put(member.getUniqueId(), team);
-                board.addEntry(member.getName());
+        }, () -> {
+            if (eligible.size() < minPlayers) {
+                onDone.accept(0);
+                return;
             }
-            syncToLowest(team);
-            for (Player member : group) {
-                sendTeamInfo(member, team);
+            clearState();
+            clearBoardTeams();
+            List<Player> players = new ArrayList<>(eligible);
+            Collections.shuffle(players);
+            teamSize = size;
+            for (int from = 0; from < players.size(); from += size) {
+                List<Player> group = players.subList(from, Math.min(from + size, players.size()));
+                ShareTeam team = new ShareTeam(teams.size() + 1);
+                teams.add(team);
+                for (Player member : group) {
+                    team.members().add(member.getUniqueId());
+                    teamByPlayer.put(member.getUniqueId(), team);
+                    addToBoardTeam(team, member.getName());
+                }
+                syncToLowest(team);
+                for (Player member : group) {
+                    sendTeamInfo(member, team);
+                }
             }
-        }
-        enabled = true;
-        return teams.size();
+            enabled = true;
+            onDone.accept(teams.size());
+        });
     }
 
-    public void stop() {
+    public void stop(Runnable onStopped) {
+        scheduler.global(() -> {
+            if (!enabled) {
+                return;
+            }
+            clearState();
+            clearBoardTeams();
+            onStopped.run();
+        });
+    }
+
+    public void shutdown() {
+        clearState();
+        try {
+            clearBoardTeams();
+        } catch (Throwable t) {
+            plugin.getLogger().warning("Could not clear health-share scoreboard teams on shutdown: " + t);
+        }
+    }
+
+    private void clearState() {
         enabled = false;
         teamSize = 0;
         teams.clear();
         teamByPlayer.clear();
-        clearBoardTeams();
-    }
-
-    public void shutdown() {
-        stop();
     }
 
     void scheduleSync(Player player) {
-        if (!enabled || wiping || !teamByPlayer.containsKey(player.getUniqueId())) {
+        if (!enabled) {
             return;
         }
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!enabled || wiping || !player.isOnline() || player.isDead()) {
+        ShareTeam team = teamByPlayer.get(player.getUniqueId());
+        if (team == null || team.isWiping()) {
+            return;
+        }
+        scheduler.entity(player, () -> {
+            if (!enabled || team.isWiping() || !player.isOnline() || player.isDead()) {
                 return;
             }
-            ShareTeam team = teamByPlayer.get(player.getUniqueId());
             double health = player.getHealth();
-            if (team == null || health <= 0.0) {
+            if (health <= 0.0) {
                 return;
             }
-            for (Player member : livingMembers(team)) {
-                if (!member.equals(player)) {
-                    applyHealth(member, health);
+            team.pooledHealth = health;
+            for (UUID id : team.members()) {
+                if (id.equals(player.getUniqueId())) {
+                    continue;
                 }
+                Player member = Bukkit.getPlayer(id);
+                if (member == null) {
+                    continue;
+                }
+                scheduler.entity(member, () -> {
+                    if (enabled && !team.isWiping() && !member.isDead()) {
+                        applyHealth(member, health);
+                    }
+                });
             }
         });
     }
 
-    ShareTeam onDeath(Player victim) {
-        if (!enabled || wiping) {
-            return null;
+    void onDeath(Player victim) {
+        if (!enabled) {
+            return;
         }
         ShareTeam team = teamByPlayer.get(victim.getUniqueId());
-        if (team == null) {
-            return null;
+        if (team == null || !team.claimWipe()) {
+            return;
         }
-        List<Player> others = livingMembers(team);
-        others.remove(victim);
+        List<Player> others = onlineMembers(team);
+        others.removeIf(member -> member.getUniqueId().equals(victim.getUniqueId()));
         if (others.isEmpty()) {
-            return null;
+            team.releaseWipe();
+            return;
         }
-        wiping = true;
-        try {
-            for (Player member : others) {
-                member.setHealth(0.0);
+
+        String victimName = victim.getName();
+        AtomicInteger killed = new AtomicInteger();
+        AtomicInteger pending = new AtomicInteger(others.size());
+        Runnable settle = () -> {
+            if (pending.decrementAndGet() == 0) {
+                team.pooledHealth = -1.0;
+                team.releaseWipe();
+                if (killed.get() > 0) {
+                    Messages.broadcast("healthshare.team-wiped",
+                            "victim", victimName, "team", team.displayName());
+                }
             }
-        } finally {
-            wiping = false;
+        };
+        for (Player member : others) {
+            ScheduledTask task = scheduler.entityOrDrop(member, () -> {
+                try {
+                    if (!member.isDead()) {
+                        member.setHealth(0.0);
+                        killed.incrementAndGet();
+                    }
+                } finally {
+                    settle.run();
+                }
+            }, settle);
+            if (task == null) {
+                settle.run();
+            }
         }
-        Messages.broadcast("healthshare.team-wiped", "victim", victim.getName(), "team", team.displayName());
-        return team;
     }
 
     void handleJoin(Player player) {
@@ -151,38 +244,35 @@ public final class HealthShareManager {
         }
         ShareTeam existing = teamByPlayer.get(player.getUniqueId());
         if (existing == null) {
-            if (player.getGameMode() == GameMode.SPECTATOR || teams.isEmpty()) {
+            if (player.getGameMode() == GameMode.SPECTATOR) {
                 return;
             }
             existing = smallestTeam();
+            if (existing == null) {
+                return;
+            }
             existing.members().add(player.getUniqueId());
             teamByPlayer.put(player.getUniqueId(), existing);
-            Team board = registerBoardTeam(existing);
-            board.addEntry(player.getName());
-            for (Player member : livingMembers(existing)) {
+            ShareTeam joined = existing;
+            scheduler.global(() -> addToBoardTeam(joined, player.getName()));
+            for (Player member : onlineMembers(existing)) {
                 if (!member.equals(player)) {
                     Messages.send(member, "healthshare.teammate-joined", "player", player.getName());
                 }
             }
         }
         ShareTeam team = existing;
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        scheduler.entity(player, () -> {
             if (!enabled || !player.isOnline() || player.isDead()) {
                 return;
             }
-            syncToLowest(team);
             sendTeamInfo(player, team);
+            syncToLowest(team);
         });
     }
 
     double teamHealth(ShareTeam team) {
-        double lowest = -1.0;
-        for (Player member : livingMembers(team)) {
-            if (lowest < 0.0 || member.getHealth() < lowest) {
-                lowest = member.getHealth();
-            }
-        }
-        return lowest;
+        return team.pooledHealth;
     }
 
     String memberNames(ShareTeam team, Player exclude) {
@@ -209,34 +299,43 @@ public final class HealthShareManager {
     }
 
     private void syncToLowest(ShareTeam team) {
-        double health = teamHealth(team);
-        if (health <= 0.0) {
+        List<Player> members = onlineMembers(team);
+        if (members.isEmpty()) {
             return;
         }
-        for (Player member : livingMembers(team)) {
-            applyHealth(member, health);
-        }
+        Map<UUID, Double> healths = new ConcurrentHashMap<>();
+        Players.forEach(scheduler, members, member -> {
+            if (!member.isDead()) {
+                healths.put(member.getUniqueId(), member.getHealth());
+            }
+        }, () -> {
+            double lowest = healths.values().stream().mapToDouble(Double::doubleValue).min().orElse(-1.0);
+            team.pooledHealth = lowest;
+            if (lowest > 0.0) {
+                Players.forEach(scheduler, onlineMembers(team), member -> applyHealth(member, lowest));
+            }
+        });
     }
 
     private ShareTeam smallestTeam() {
-        ShareTeam smallest = teams.get(0);
+        ShareTeam smallest = null;
         for (ShareTeam team : teams) {
-            if (team.members().size() < smallest.members().size()) {
+            if (smallest == null || team.members().size() < smallest.members().size()) {
                 smallest = team;
             }
         }
         return smallest;
     }
 
-    private List<Player> livingMembers(ShareTeam team) {
-        List<Player> living = new ArrayList<>();
+    private List<Player> onlineMembers(ShareTeam team) {
+        List<Player> online = new ArrayList<>();
         for (UUID id : team.members()) {
             Player member = Bukkit.getPlayer(id);
-            if (member != null && !member.isDead()) {
-                living.add(member);
+            if (member != null) {
+                online.add(member);
             }
         }
-        return living;
+        return online;
     }
 
     private void applyHealth(Player player, double health) {
@@ -245,7 +344,10 @@ public final class HealthShareManager {
         player.setHealth(Math.clamp(health, 0.0, max));
     }
 
-    private Team registerBoardTeam(ShareTeam team) {
+    private void addToBoardTeam(ShareTeam team, String playerName) {
+        if (HcgPlatform.isFolia()) {
+            return;
+        }
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         String name = TEAM_PREFIX + team.id();
         Team board = scoreboard.getTeam(name);
@@ -253,10 +355,13 @@ public final class HealthShareManager {
             board = scoreboard.registerNewTeam(name);
         }
         board.color(COLORS.get((team.id() - 1) % COLORS.size()));
-        return board;
+        board.addEntry(playerName);
     }
 
     private void clearBoardTeams() {
+        if (HcgPlatform.isFolia()) {
+            return;
+        }
         Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
         for (Team board : List.copyOf(scoreboard.getTeams())) {
             if (board.getName().startsWith(TEAM_PREFIX)) {
