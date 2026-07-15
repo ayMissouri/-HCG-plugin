@@ -5,8 +5,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.RecordComponent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -54,8 +56,9 @@ final class NpcPackets {
     private final Method sendPacket;
     private final Field nettyConnectionField;
     private final Field channelField;
-    private Method craftPlayerGetHandle;
-    private Method craftWorldGetHandle;
+    // Resolved lazily off a live instance, and read from whichever region a viewer is in.
+    private volatile Method craftPlayerGetHandle;
+    private volatile Method craftWorldGetHandle;
 
     // packets
     private final Constructor<?> infoUpdateCtor;
@@ -81,6 +84,19 @@ final class NpcPackets {
     private final Object vec3Zero;
     private final Object survivalGameType;
 
+    // Client-side team, used only to hide the NPC's profile nametag and carry collision/glow colour.
+    private final Object teamScoreboard;
+    private final Constructor<?> playerTeamCtor;
+    private final Method teamSetNameTagVisibility;
+    private final Method teamSetCollisionRule;
+    private final Method teamSetColor;
+    private final Method teamGetPlayers;
+    private final Method teamAddOrModifyPacket;
+    private final Method teamRemovePacket;
+    private final Object visibilityNever;
+    private final Class<?> collisionRuleClass;
+    private final Class<?> chatFormattingClass;
+
     // serverbound click packets
     private final Class<?> interactPacketClass;
     private final Field interactEntityIdField;
@@ -91,9 +107,18 @@ final class NpcPackets {
     private final Field attackEntityIdField;
     private final Class<?> interactionHandClass;
 
+    /** Why the client-side team is unavailable, or null when it resolved. Reported by createOrNull. */
+    private String teamUnavailable;
+
     static NpcPackets createOrNull(Logger logger) {
         try {
-            return new NpcPackets();
+            NpcPackets packets = new NpcPackets();
+            if (packets.teamUnavailable != null) {
+                logger.warning("NPC nametags can't be hidden and /npc glowing|collidable won't apply:"
+                        + " the client-side team internals weren't recognized (" + packets.teamUnavailable
+                        + "). NPCs otherwise work.");
+            }
+            return packets;
         } catch (Throwable t) {
             logger.warning("NPC support disabled, server internals not recognized ("
                     + t.getClass().getSimpleName() + ": " + t.getMessage() + ")."
@@ -182,6 +207,49 @@ final class NpcPackets {
         dataValueCreate = dataValueClass.getMethod("create", accessorClass, Object.class);
         sharedFlagsAccessor = staticFieldValue(entityClass, "DATA_SHARED_FLAGS_ID");
         skinLayersAccessor = staticFieldValue(serverPlayerClass, "DATA_PLAYER_MODE_CUSTOMISATION");
+
+        Object scoreboard = null;
+        Constructor<?> teamCtor = null;
+        Method setVisibility = null;
+        Method setCollision = null;
+        Method setColour = null;
+        Method players = null;
+        Method addOrModify = null;
+        Method removeTeam = null;
+        Object never = null;
+        Class<?> collisionClass = null;
+        Class<?> formattingClass = null;
+        try {
+            Class<?> scoreboardClass = Class.forName("net.minecraft.world.scores.Scoreboard");
+            Class<?> playerTeamClass = Class.forName("net.minecraft.world.scores.PlayerTeam");
+            Class<?> visibilityClass = Class.forName("net.minecraft.world.scores.Team$Visibility");
+            collisionClass = Class.forName("net.minecraft.world.scores.Team$CollisionRule");
+            formattingClass = Class.forName("net.minecraft.ChatFormatting");
+            Class<?> teamPacketClass = Class.forName(proto + "ClientboundSetPlayerTeamPacket");
+            scoreboard = scoreboardClass.getConstructor().newInstance();
+            teamCtor = playerTeamClass.getConstructor(scoreboardClass, String.class);
+            setVisibility = playerTeamClass.getMethod("setNameTagVisibility", visibilityClass);
+            setCollision = playerTeamClass.getMethod("setCollisionRule", collisionClass);
+            setColour = playerTeamClass.getMethod("setColor", formattingClass);
+            players = playerTeamClass.getMethod("getPlayers");
+            addOrModify = teamPacketClass.getMethod("createAddOrModifyPacket", playerTeamClass, boolean.class);
+            removeTeam = teamPacketClass.getMethod("createRemovePacket", playerTeamClass);
+            never = visibilityClass.getField("NEVER").get(null);
+        } catch (Throwable t) {
+            scoreboard = null;
+            teamUnavailable = t.getClass().getSimpleName() + ": " + t.getMessage();
+        }
+        teamScoreboard = scoreboard;
+        playerTeamCtor = teamCtor;
+        teamSetNameTagVisibility = setVisibility;
+        teamSetCollisionRule = setCollision;
+        teamSetColor = setColour;
+        teamGetPlayers = players;
+        teamAddOrModifyPacket = addOrModify;
+        teamRemovePacket = removeTeam;
+        visibilityNever = never;
+        collisionRuleClass = collisionClass;
+        chatFormattingClass = formattingClass;
 
         rotateHeadCtor = Class.forName(proto + "ClientboundRotateHeadPacket")
                 .getConstructor(entityClass, byte.class);
@@ -314,6 +382,44 @@ final class NpcPackets {
 
     boolean canTeleport() {
         return teleportMoveCtor != null || teleportEntityCtor != null;
+    }
+
+    /** False when the team lookups didn't resolve; NPCs then show their profile name. */
+    boolean canTeam() {
+        return teamScoreboard != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    Object createTeam(String teamName, String profileName, boolean collidable, String glowColor)
+            throws Exception {
+        Object team = playerTeamCtor.newInstance(teamScoreboard, teamName);
+        teamSetNameTagVisibility.invoke(team, visibilityNever);
+        teamSetCollisionRule.invoke(team, enumOrNull(collisionRuleClass, collidable ? "ALWAYS" : "NEVER"));
+        Object colour = enumOrNull(chatFormattingClass, glowColor);
+        if (colour == null) {
+            colour = enumOrNull(chatFormattingClass, "WHITE");
+        }
+        if (colour != null) {
+            teamSetColor.invoke(team, colour);
+        }
+        ((Collection<String>) teamGetPlayers.invoke(team)).add(profileName);
+        return team;
+    }
+
+    void sendTeam(Player viewer, Object team) throws Exception {
+        sendPacket(viewer, teamAddOrModifyPacket.invoke(null, team, true));
+    }
+
+    void sendTeamRemove(Player viewer, Object team) throws Exception {
+        sendPacket(viewer, teamRemovePacket.invoke(null, team));
+    }
+
+    private static Object enumOrNull(Class<?> type, String name) {
+        try {
+            return type.getField(name.toUpperCase(Locale.ROOT)).get(null);
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
     }
 
     void sendTeleport(Player viewer, Object entity, Location location) throws Exception {

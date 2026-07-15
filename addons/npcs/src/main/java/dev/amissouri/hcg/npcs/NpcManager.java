@@ -20,11 +20,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import dev.amissouri.hcg.AsyncSaver;
 import dev.amissouri.hcg.HcgScheduler;
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -35,20 +35,18 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.Team;
 
 public final class NpcManager {
 
     static final class Npc {
         final NpcData data;
-        Object entity;
-        int entityId = -1;
-        final Set<UUID> viewers = new HashSet<>();
-        final Set<UUID> turned = new HashSet<>();
-        final Map<UUID, Long> lastInteraction = new HashMap<>();
-        UUID hologramId;
+        volatile Object entity;
+        volatile int entityId = -1;
+        final Set<UUID> viewers = ConcurrentHashMap.newKeySet();
+        final Set<UUID> turned = ConcurrentHashMap.newKeySet();
+        final Map<UUID, Long> lastInteraction = new ConcurrentHashMap<>();
+        volatile UUID hologramId;
+        volatile Object team;
 
         Npc(NpcData data) {
             this.data = data;
@@ -60,21 +58,22 @@ public final class NpcManager {
     private static final long CLICK_DEDUPE_MILLIS = 150;
 
     private final JavaPlugin plugin;
+    private final HcgScheduler scheduler;
     private final NpcPackets packets;
     private final NamespacedKey hologramKey;
     private final Map<String, Npc> npcs = new LinkedHashMap<>();
     private final ConcurrentHashMap<Integer, String> entityIds = new ConcurrentHashMap<>();
+    private final Map<UUID, ScheduledTask> turnTasks = new ConcurrentHashMap<>();
     private final AsyncSaver<String> saver;
-    private BukkitTask turnTask;
 
     private static final long SAVE_PERIOD_TICKS = 100L;
 
-    public NpcManager(JavaPlugin plugin) {
+    public NpcManager(JavaPlugin plugin, HcgScheduler scheduler) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
         this.packets = NpcPackets.createOrNull(plugin.getLogger());
         this.hologramKey = new NamespacedKey(plugin, "npc-hologram");
-        this.saver = new AsyncSaver<>(new HcgScheduler(plugin), SAVE_PERIOD_TICKS,
-                this::snapshot, this::writeYaml);
+        this.saver = new AsyncSaver<>(scheduler, SAVE_PERIOD_TICKS, this::snapshot, this::writeYaml);
     }
 
     public boolean isAvailable() {
@@ -102,7 +101,6 @@ public final class NpcManager {
         for (Player player : Bukkit.getOnlinePlayers()) {
             handleJoin(player);
         }
-        turnTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickTurning, 20, 3);
         saver.start();
     }
 
@@ -111,19 +109,20 @@ public final class NpcManager {
             return;
         }
         saver.flushNow();
-        if (turnTask != null) {
-            turnTask.cancel();
+        for (ScheduledTask task : turnTasks.values()) {
+            HcgScheduler.cancel(task);
         }
+        turnTasks.clear();
         for (Player player : Bukkit.getOnlinePlayers()) {
             packets.uninject(player);
         }
         for (Npc npc : npcs.values()) {
+            removeTeam(npc);
             for (Player viewer : onlineViewers(npc)) {
                 despawnFor(viewer, npc);
             }
             npc.viewers.clear();
             removeHologram(npc);
-            removeTeam(npc);
         }
         npcs.clear();
         entityIds.clear();
@@ -177,12 +176,12 @@ public final class NpcManager {
     }
 
     public void delete(Npc npc) {
+        removeTeam(npc);
         for (Player viewer : onlineViewers(npc)) {
             despawnFor(viewer, npc);
         }
         npc.viewers.clear();
         removeHologram(npc);
-        removeTeam(npc);
         if (npc.entityId != -1) {
             entityIds.remove(npc.entityId);
         }
@@ -223,6 +222,9 @@ public final class NpcManager {
             return;
         }
         try {
+            if (npc.team != null) {
+                packets.sendTeam(player, npc.team);
+            }
             packets.sendSpawn(player, npc.entity, npc.data.uuid(), packets.gameProfile(npc.entity),
                     npc.data.isShowInTab(), location, npc.data.isGlowing());
             if (!npc.data.equipment().isEmpty()) {
@@ -279,15 +281,17 @@ public final class NpcManager {
 
     public void handleJoin(Player player) {
         packets.inject(player, this::onPacketClick);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        scheduler.entityDelayed(player, () -> {
             if (player.isOnline()) {
                 showWorldNpcs(player);
             }
         }, 10);
+        startTurning(player);
     }
 
     public void handleQuit(Player player) {
         packets.uninject(player);
+        stopTurning(player);
         for (Npc npc : npcs.values()) {
             npc.viewers.remove(player.getUniqueId());
             npc.turned.remove(player.getUniqueId());
@@ -300,7 +304,7 @@ public final class NpcManager {
             npc.viewers.remove(player.getUniqueId());
             npc.turned.remove(player.getUniqueId());
         }
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        scheduler.entityDelayed(player, () -> {
             if (player.isOnline()) {
                 showWorldNpcs(player);
             }
@@ -314,7 +318,7 @@ public final class NpcManager {
                 despawnFor(player, npc);
             }
         }
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        scheduler.entityDelayed(player, () -> {
             if (player.isOnline()) {
                 showWorldNpcs(player);
             }
@@ -426,32 +430,31 @@ public final class NpcManager {
     }
 
     private void setupTeam(Npc npc) {
-        Scoreboard scoreboard = Bukkit.getScoreboardManager().getMainScoreboard();
-        Team team = scoreboard.getTeam(npc.data.teamName());
-        if (team == null) {
-            team = scoreboard.registerNewTeam(npc.data.teamName());
+        if (!packets.canTeam()) {
+            return;
         }
-        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
-        team.setOption(Team.Option.COLLISION_RULE,
-                npc.data.isCollidable() ? Team.OptionStatus.ALWAYS : Team.OptionStatus.NEVER);
-        ChatColor color = ChatColor.WHITE;
-        if (npc.data.isGlowing()) {
-            try {
-                color = ChatColor.valueOf(npc.data.glowColor().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException ignored) {
+        try {
+            String color = npc.data.isGlowing() ? npc.data.glowColor() : "WHITE";
+            npc.team = packets.createTeam(npc.data.teamName(), npc.data.profileName(),
+                    npc.data.isCollidable(), color);
+            for (Player viewer : onlineViewers(npc)) {
+                packets.sendTeam(viewer, npc.team);
             }
-        }
-        team.setColor(color);
-        if (!team.hasEntry(npc.data.profileName())) {
-            team.addEntry(npc.data.profileName());
+        } catch (Exception e) {
+            plugin.getLogger().warning("Could not set up the team for NPC '" + npc.data.name() + "': " + e);
         }
     }
 
     private void removeTeam(Npc npc) {
-        Team team = Bukkit.getScoreboardManager().getMainScoreboard().getTeam(npc.data.teamName());
-        if (team != null) {
-            team.unregister();
+        if (npc.team == null) {
+            return;
         }
+        for (Player viewer : onlineViewers(npc)) {
+            try {
+                packets.sendTeamRemove(viewer, npc.team);
+            } catch (Exception ignored) {}
+        }
+        npc.team = null;
     }
 
     private void spawnHologram(Npc npc) {
@@ -463,25 +466,33 @@ public final class NpcManager {
         Location at = location.clone().add(0, HOLOGRAM_HEIGHT, 0);
         at.setYaw(0);
         at.setPitch(0);
-        TextDisplay display = location.getWorld().spawn(at, TextDisplay.class, entity -> {
-            entity.text(hologramText(npc.data.displayName()));
-            entity.setBillboard(Display.Billboard.CENTER);
-            entity.setAlignment(TextDisplay.TextAlignment.CENTER);
-            entity.setPersistent(false);
-            entity.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING,
-                    npc.data.name().toLowerCase(Locale.ROOT));
+        scheduler.region(at, () -> {
+            TextDisplay display = at.getWorld().spawn(at, TextDisplay.class, entity -> {
+                entity.text(hologramText(npc.data.displayName()));
+                entity.setBillboard(Display.Billboard.CENTER);
+                entity.setAlignment(TextDisplay.TextAlignment.CENTER);
+                entity.setPersistent(false);
+                entity.getPersistentDataContainer().set(hologramKey, PersistentDataType.STRING,
+                        npc.data.name().toLowerCase(Locale.ROOT));
+            });
+            npc.hologramId = display.getUniqueId();
         });
-        npc.hologramId = display.getUniqueId();
     }
 
     private void removeHologram(Npc npc) {
-        if (npc.hologramId != null) {
-            Entity entity = Bukkit.getEntity(npc.hologramId);
+        UUID id = npc.hologramId;
+        Location location = npc.data.location();
+        if (id == null || location == null) {
+            npc.hologramId = null;
+            return;
+        }
+        npc.hologramId = null;
+        scheduler.region(location, () -> {
+            Entity entity = Bukkit.getEntity(id);
             if (entity != null) {
                 entity.remove();
             }
-            npc.hologramId = null;
-        }
+        });
     }
 
     private void refreshHologram(Npc npc) {
@@ -500,32 +511,40 @@ public final class NpcManager {
         return text;
     }
 
-    private void tickTurning() {
+    private void startTurning(Player player) {
+        ScheduledTask task = scheduler.entityTimer(player, () -> tickTurningFor(player), 20, 3);
+        if (task != null) {
+            turnTasks.put(player.getUniqueId(), task);
+        }
+    }
+
+    private void stopTurning(Player player) {
+        HcgScheduler.cancel(turnTasks.remove(player.getUniqueId()));
+    }
+
+    private void tickTurningFor(Player viewer) {
+        UUID id = viewer.getUniqueId();
+        Location self = viewer.getLocation();
+        Location eye = viewer.getEyeLocation();
         for (Npc npc : npcs.values()) {
-            if (!npc.data.isTurnToPlayer() || npc.entity == null) {
+            if (!npc.data.isTurnToPlayer() || npc.entity == null || !npc.viewers.contains(id)) {
                 continue;
             }
             Location location = npc.data.location();
-            if (location == null) {
+            if (location == null || !self.getWorld().equals(location.getWorld())) {
                 continue;
             }
             double maxSquared = npc.data.turnDistance() * npc.data.turnDistance();
-            for (Player viewer : onlineViewers(npc)) {
-                if (!viewer.getWorld().equals(location.getWorld())) {
-                    continue;
+            try {
+                if (self.distanceSquared(location) <= maxSquared) {
+                    float[] rot = lookAt(location, eye);
+                    packets.sendRotation(viewer, npc.entity, npc.entityId, rot[0], rot[1]);
+                    npc.turned.add(id);
+                } else if (npc.turned.remove(id)) {
+                    packets.sendRotation(viewer, npc.entity, npc.entityId,
+                            location.getYaw(), location.getPitch());
                 }
-                double distSquared = viewer.getLocation().distanceSquared(location);
-                try {
-                    if (distSquared <= maxSquared) {
-                        float[] rot = lookAt(location, viewer.getEyeLocation());
-                        packets.sendRotation(viewer, npc.entity, npc.entityId, rot[0], rot[1]);
-                        npc.turned.add(viewer.getUniqueId());
-                    } else if (npc.turned.remove(viewer.getUniqueId())) {
-                        packets.sendRotation(viewer, npc.entity, npc.entityId,
-                                location.getYaw(), location.getPitch());
-                    }
-                } catch (Exception ignored) {
-                }
+            } catch (Exception ignored) {
             }
         }
     }
@@ -545,7 +564,7 @@ public final class NpcManager {
         if (name == null) {
             return false;
         }
-        Bukkit.getScheduler().runTask(plugin, () -> {
+        scheduler.entity(player, () -> {
             Npc npc = get(name);
             if (npc != null && player.isOnline()) {
                 handleClick(player, npc, type);
@@ -595,8 +614,7 @@ public final class NpcManager {
                         continue;
                     }
                     int next = i + 1;
-                    Bukkit.getScheduler().runTaskLater(plugin,
-                            () -> runActions(player, actions, next), Math.max(1, ticks));
+                    scheduler.entityDelayed(player, () -> runActions(player, actions, next), ticks);
                     return;
                 }
                 default -> {

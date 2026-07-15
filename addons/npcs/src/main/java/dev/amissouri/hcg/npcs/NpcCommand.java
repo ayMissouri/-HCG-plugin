@@ -1,4 +1,5 @@
 package dev.amissouri.hcg.npcs;
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.Messages;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -39,10 +40,12 @@ public final class NpcCommand implements CommandExecutor, TabCompleter {
             "message", "player_command", "console_command", "sound", "wait");
 
     private final JavaPlugin plugin;
+    private final HcgScheduler scheduler;
     private final NpcManager manager;
 
-    public NpcCommand(JavaPlugin plugin, NpcManager manager) {
+    public NpcCommand(JavaPlugin plugin, HcgScheduler scheduler, NpcManager manager) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
         this.manager = manager;
     }
 
@@ -160,7 +163,7 @@ public final class NpcCommand implements CommandExecutor, TabCompleter {
                             "name", npc.data.name(), "world", npc.data.worldName());
                     return true;
                 }
-                player.teleport(location);
+                player.teleportAsync(location);
                 Messages.send(sender, "npc.teleported", "name", npc.data.name());
             }
             case "cooldown" -> {
@@ -253,7 +256,7 @@ public final class NpcCommand implements CommandExecutor, TabCompleter {
         String apiKey = plugin.getConfig().getString("npc.mineskin-api-key", "");
         String source = SkinFetcher.looksLikeUrl(input) ? "URL" : input;
         SkinFetcher.fetch(input, apiKey).whenComplete((skin, error) ->
-                Bukkit.getScheduler().runTask(plugin, () -> {
+                scheduler.global(() -> {
                     if (error != null) {
                         Throwable cause = error.getCause() != null ? error.getCause() : error;
                         Messages.send(sender, "npc.skin-failed", "reason", cause.getMessage());

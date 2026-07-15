@@ -2,6 +2,7 @@ package dev.amissouri.hcg.npcs;
 
 import java.util.List;
 
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.HelpRegistry;
 import dev.amissouri.hcg.HelpRegistry.Entry;
 import dev.amissouri.hcg.Messages;
@@ -22,11 +23,12 @@ public final class NpcsPlugin extends JavaPlugin {
         saveDefaultConfig();
         Messages.registerDefaults(this);
 
-        npcManager = new NpcManager(this);
+        HcgScheduler scheduler = new HcgScheduler(this);
+        npcManager = new NpcManager(this, scheduler);
         if (npcManager.isAvailable()) {
             getServer().getPluginManager().registerEvents(new NpcListener(npcManager), this);
         }
-        register("npc", new NpcCommand(this, npcManager));
+        register("npc", new NpcCommand(this, scheduler, npcManager));
 
         npcManager.load();
 
