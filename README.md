@@ -1,6 +1,6 @@
 # HCGplugin
 
-PaperMC 1.21.1+ plugin split into a **base plugin** plus **installable feature addons**. The base
+PaperMC 1.21.x & 26.x plugin split into a **base plugin** plus **installable feature addons**. The base
 provides the `/hcg` help menu and the always-on Admin, Item, and World commands; each game mode or
 feature (Health Decay, Lava Raise, NPCs, ...) ships as its own addon JAR that depends on the base.
 Install only the addons you want. All commands default to op-only.

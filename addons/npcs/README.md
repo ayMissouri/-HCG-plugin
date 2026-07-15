@@ -2,8 +2,6 @@
 
 > Addon for **[HCGplugin](../../README.md)**, requires the base plugin to be installed.
 
-> Currently only works on 1.21.x (future versions soon)
-
 `/npc` creates NPCs. They are packet-based so no real entity exists on the server, they can't be pushed, damaged, or killed, and they survive restarts via `npcs.yml`.
 
 1. `/npc create <name>` spawns an NPC where you stand, facing the way you face.
