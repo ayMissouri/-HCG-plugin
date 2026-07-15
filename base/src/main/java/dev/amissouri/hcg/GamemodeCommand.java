@@ -15,6 +15,12 @@ import org.bukkit.entity.Player;
  */
 public final class GamemodeCommand implements CommandExecutor, TabCompleter {
 
+    private final HcgScheduler scheduler;
+
+    public GamemodeCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         GameMode mode = switch (command.getName()) {
@@ -42,7 +48,7 @@ public final class GamemodeCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        target.setGameMode(mode);
+        scheduler.entity(target, () -> target.setGameMode(mode));
         String modeName = mode.name().toLowerCase();
         Messages.send(target, "commands.gamemode.set", "mode", modeName);
         if (!target.equals(sender)) {

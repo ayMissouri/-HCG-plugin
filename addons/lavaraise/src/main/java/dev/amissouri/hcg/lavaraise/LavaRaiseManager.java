@@ -210,7 +210,7 @@ public final class LavaRaiseManager {
         phase = Phase.IDLE;
         purging = false;
         if (burnTracker != null) {
-            burnTracker.save();
+            burnTracker.shutdown();
         }
     }
 

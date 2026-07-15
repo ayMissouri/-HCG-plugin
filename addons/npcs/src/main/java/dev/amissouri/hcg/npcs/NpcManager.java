@@ -3,6 +3,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +18,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import dev.amissouri.hcg.AsyncSaver;
+import dev.amissouri.hcg.HcgScheduler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
@@ -59,12 +64,17 @@ public final class NpcManager {
     private final NamespacedKey hologramKey;
     private final Map<String, Npc> npcs = new LinkedHashMap<>();
     private final ConcurrentHashMap<Integer, String> entityIds = new ConcurrentHashMap<>();
+    private final AsyncSaver<String> saver;
     private BukkitTask turnTask;
+
+    private static final long SAVE_PERIOD_TICKS = 100L;
 
     public NpcManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.packets = NpcPackets.createOrNull(plugin.getLogger());
         this.hologramKey = new NamespacedKey(plugin, "npc-hologram");
+        this.saver = new AsyncSaver<>(new HcgScheduler(plugin), SAVE_PERIOD_TICKS,
+                this::snapshot, this::writeYaml);
     }
 
     public boolean isAvailable() {
@@ -93,12 +103,14 @@ public final class NpcManager {
             handleJoin(player);
         }
         turnTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickTurning, 20, 3);
+        saver.start();
     }
 
     public void shutdown() {
         if (packets == null) {
             return;
         }
+        saver.flushNow();
         if (turnTask != null) {
             turnTask.cancel();
         }
@@ -118,12 +130,22 @@ public final class NpcManager {
     }
 
     public void save() {
+        saver.markDirty();
+    }
+
+    private String snapshot() {
         YamlConfiguration config = new YamlConfiguration();
         for (Npc npc : npcs.values()) {
             npc.data.save(config.createSection("npcs." + npc.data.name()));
         }
+        return config.saveToString();
+    }
+
+    private void writeYaml(String yaml) {
         try {
-            config.save(npcsFile());
+            Path path = npcsFile().toPath();
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, yaml, StandardCharsets.UTF_8);
         } catch (IOException e) {
             plugin.getLogger().warning("Could not save npcs.yml: " + e.getMessage());
         }

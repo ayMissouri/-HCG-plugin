@@ -1,18 +1,22 @@
 package dev.amissouri.hcg.lavaraise;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import dev.amissouri.hcg.AsyncSaver;
+import dev.amissouri.hcg.HcgScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -29,15 +33,20 @@ import org.bukkit.event.block.BlockPlaceEvent;
  */
 public final class LavaBurnTracker implements Listener {
 
+    private static final long SAVE_PERIOD_TICKS = 6000L;
+
     private final JavaPlugin plugin;
     private final LavaRaiseManager manager;
     private final Map<Integer, Set<Long>> byY = new HashMap<>();
+    private final AsyncSaver<byte[]> saver;
 
     public LavaBurnTracker(JavaPlugin plugin, LavaRaiseManager manager) {
         this.plugin = plugin;
         this.manager = manager;
         load();
-        Bukkit.getScheduler().runTaskTimer(plugin, this::save, 6000L, 6000L);
+        this.saver = new AsyncSaver<>(new HcgScheduler(plugin), SAVE_PERIOD_TICKS,
+                this::snapshot, this::writeBytes);
+        this.saver.start();
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -56,17 +65,19 @@ public final class LavaBurnTracker implements Listener {
             return;
         }
         byY.computeIfAbsent(block.getY(), k -> new HashSet<>()).add(pack(block.getX(), block.getZ()));
+        saver.markDirty();
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
         Set<Long> set = byY.get(event.getBlock().getY());
-        if (set != null) {
-            set.remove(pack(event.getBlock().getX(), event.getBlock().getZ()));
+        if (set != null && set.remove(pack(event.getBlock().getX(), event.getBlock().getZ()))) {
+            saver.markDirty();
         }
     }
 
     public void burnRange(int fromY, int toY) {
+        boolean removedAny = false;
         for (int y = fromY; y <= toY; y++) {
             Set<Long> set = byY.get(y);
             if (set == null || set.isEmpty()) {
@@ -88,7 +99,11 @@ public final class LavaBurnTracker implements Listener {
                     burn(block);
                 }
                 iterator.remove();
+                removedAny = true;
             }
+        }
+        if (removedAny) {
+            saver.markDirty();
         }
     }
 
@@ -103,8 +118,13 @@ public final class LavaBurnTracker implements Listener {
         return new File(plugin.getDataFolder(), "placed-burnables.dat");
     }
 
-    public void save() {
-        try (DataOutputStream out = new DataOutputStream(new FileOutputStream(dataFile()))) {
+    public void shutdown() {
+        saver.flushNow();
+    }
+
+    private byte[] snapshot() {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(bytes)) {
             int count = byY.values().stream().mapToInt(Set::size).sum();
             out.writeInt(count);
             for (Map.Entry<Integer, Set<Long>> entry : byY.entrySet()) {
@@ -114,6 +134,17 @@ public final class LavaBurnTracker implements Listener {
                     out.writeInt((int) key);
                 }
             }
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return bytes.toByteArray();
+    }
+
+    private void writeBytes(byte[] data) {
+        try {
+            Path path = dataFile().toPath();
+            Files.createDirectories(path.getParent());
+            Files.write(path, data);
         } catch (IOException e) {
             plugin.getLogger().warning("Could not save placed-burnables.dat: " + e.getMessage());
         }

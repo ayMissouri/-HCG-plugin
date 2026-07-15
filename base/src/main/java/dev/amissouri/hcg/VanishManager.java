@@ -10,10 +10,12 @@ import org.bukkit.entity.Player;
 public final class VanishManager {
 
     private final HCGPlugin plugin;
+    private final HcgScheduler scheduler;
     private final Set<UUID> vanished = ConcurrentHashMap.newKeySet();
 
-    public VanishManager(HCGPlugin plugin) {
+    public VanishManager(HCGPlugin plugin, HcgScheduler scheduler) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
     }
 
     public boolean isVanished(Player player) {
@@ -42,18 +44,18 @@ public final class VanishManager {
     }
 
     private void hide(Player target) {
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
+        Players.forEachOnline(scheduler, viewer -> {
             if (viewer != target) {
                 viewer.hidePlayer(plugin, target);
             }
-        }
+        });
     }
 
     private void show(Player target) {
-        for (Player viewer : Bukkit.getOnlinePlayers()) {
+        Players.forEachOnline(scheduler, viewer -> {
             if (viewer != target) {
                 viewer.showPlayer(plugin, target);
             }
-        }
+        });
     }
 }

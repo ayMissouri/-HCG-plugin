@@ -10,9 +10,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /**
  * The HCGplugin base. It provides the shared infrastructure every addon relies on
- * ({@link Messages}, {@link HelpRegistry}, {@link HcgText}, the {@code /hcg} help menu) plus the
- * always-on Admin, Item, and World commands. Feature categories (Health Decay, Lava Raise, ...)
- * ship as separate addon plugins that hard-depend on this one.
  */
 public final class HCGPlugin extends JavaPlugin {
 
@@ -23,46 +20,52 @@ public final class HCGPlugin extends JavaPlugin {
     public void onEnable() {
         Messages.init(this);
 
+        HcgScheduler scheduler = new HcgScheduler(this);
+        LoadedChunks loadedChunks = new LoadedChunks();
         freezeManager = new FreezeManager();
-        vanishManager = new VanishManager(this);
+        vanishManager = new VanishManager(this, scheduler);
 
+        getServer().getPluginManager().registerEvents(loadedChunks, this);
         getServer().getPluginManager().registerEvents(new FreezeListener(freezeManager), this);
         getServer().getPluginManager().registerEvents(new VanishListener(vanishManager), this);
+        getServer().getPluginManager().registerEvents(new GodListener(), this);
+        loadedChunks.seed(getLogger());
 
         register("hcg", new HcgCommand());
         register("flyspeed", new FlySpeedCommand());
         register("fly", new FlyCommand());
-        GamemodeCommand gamemode = new GamemodeCommand();
+        GamemodeCommand gamemode = new GamemodeCommand(scheduler);
         register("gmc", gamemode);
         register("gms", gamemode);
         register("gmsp", gamemode);
         register("gma", gamemode);
-        register("tpall", new TpAllCommand());
+        register("tpall", new TpAllCommand(scheduler));
         register("freeze", new FreezeCommand(freezeManager));
         register("invsee", new InvseeCommand());
-        HealFeedCommand healFeed = new HealFeedCommand();
+        HealFeedCommand healFeed = new HealFeedCommand(scheduler);
         register("heal", healFeed);
         register("feed", healFeed);
         OpenMenuCommand openMenu = new OpenMenuCommand();
         register("anvil", openMenu);
         register("craft", openMenu);
         register("enderchest", openMenu);
-        register("burn", new BurnCommand());
+        register("burn", new BurnCommand(scheduler));
         register("enchant", new EnchantCommand());
-        register("god", new GodCommand());
+        register("god", new GodCommand(scheduler));
         register("hat", new HatCommand());
         ItemTextCommand itemText = new ItemTextCommand();
         register("lore", itemText);
         register("name", itemText);
-        register("nickname", new NicknameCommand());
-        register("lightning", new LightningCommand());
-        register("remove", new RemoveCommand());
+        register("nickname", new NicknameCommand(scheduler));
+        register("lightning", new LightningCommand(scheduler));
+        register("remove", new RemoveCommand(scheduler, loadedChunks));
         register("spawner", new SpawnerCommand());
         register("spawnmob", new SpawnMobCommand());
-        register("sudo", new SudoCommand());
+        register("sudo", new SudoCommand(scheduler));
         register("vanish", new VanishCommand(vanishManager));
 
         registerHelp();
+        getLogger().info("Running on " + HcgPlatform.describe());
     }
 
     private void registerHelp() {

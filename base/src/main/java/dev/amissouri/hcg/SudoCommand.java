@@ -15,6 +15,12 @@ import org.bukkit.entity.Player;
  */
 public final class SudoCommand implements CommandExecutor, TabCompleter {
 
+    private final HcgScheduler scheduler;
+
+    public SudoCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length < 2) {
@@ -27,11 +33,11 @@ public final class SudoCommand implements CommandExecutor, TabCompleter {
         }
         String input = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         if (input.startsWith("/")) {
-            target.performCommand(input.substring(1));
+            scheduler.entity(target, () -> target.performCommand(input.substring(1)));
             Messages.send(sender, "commands.sudo.forced-command",
                     "player", target.getName(), "input", input);
         } else {
-            target.chat(input);
+            scheduler.entity(target, () -> target.chat(input));
             Messages.send(sender, "commands.sudo.forced-chat",
                     "player", target.getName(), "input", input);
         }

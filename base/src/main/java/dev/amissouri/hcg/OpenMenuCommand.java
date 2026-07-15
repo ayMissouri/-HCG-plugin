@@ -32,6 +32,10 @@ public final class OpenMenuCommand implements CommandExecutor, TabCompleter {
                         Messages.send(sender, "general.player-not-online", "player", args[0]);
                         return true;
                     }
+                    if (!target.equals(player) && HcgPlatform.isFolia()) {
+                        Messages.send(sender, "general.folia-no-shared-inventory");
+                        return true;
+                    }
                 }
                 player.openInventory(target.getEnderChest());
                 if (!target.equals(player)) {

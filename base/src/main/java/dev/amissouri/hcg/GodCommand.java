@@ -12,6 +12,12 @@ import org.bukkit.entity.Player;
 /** /god [player], toggles invulnerability. */
 public final class GodCommand implements CommandExecutor, TabCompleter {
 
+    private final HcgScheduler scheduler;
+
+    public GodCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         Player target;
@@ -28,11 +34,12 @@ public final class GodCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        boolean god = !target.isInvulnerable();
-        target.setInvulnerable(god);
-        
-        Messages.send(sender, god ? "commands.god.enabled-other" : "commands.god.disabled-other",
-                "player", target.getName());
+        scheduler.entity(target, () -> {
+            boolean god = !target.isInvulnerable();
+            target.setInvulnerable(god);
+            Messages.send(sender, god ? "commands.god.enabled-other" : "commands.god.disabled-other",
+                    "player", target.getName());
+        });
         return true;
     }
 

@@ -1,5 +1,6 @@
 package dev.amissouri.hcg;
 
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -10,6 +11,12 @@ import org.bukkit.entity.Player;
 public final class LightningCommand implements CommandExecutor {
 
     private static final int RANGE = 250;
+
+    private final HcgScheduler scheduler;
+
+    public LightningCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -22,7 +29,8 @@ public final class LightningCommand implements CommandExecutor {
             Messages.send(sender, "commands.lightning.no-block", "range", String.valueOf(RANGE));
             return true;
         }
-        target.getWorld().strikeLightning(target.getLocation().add(0.5, 1.0, 0.5));
+        Location strike = target.getLocation().add(0.5, 1.0, 0.5);
+        scheduler.region(strike, () -> strike.getWorld().strikeLightning(strike));
         return true;
     }
 }

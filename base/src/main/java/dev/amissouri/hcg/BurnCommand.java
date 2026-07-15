@@ -12,6 +12,12 @@ import org.bukkit.entity.Player;
 /** /burn <player> [seconds], sets a player on fire (default 5 seconds). */
 public final class BurnCommand implements CommandExecutor, TabCompleter {
 
+    private final HcgScheduler scheduler;
+
+    public BurnCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
@@ -31,7 +37,8 @@ public final class BurnCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
         }
-        target.setFireTicks(seconds * 20);
+        int ticks = seconds * 20;
+        scheduler.entity(target, () -> target.setFireTicks(ticks));
         Messages.send(sender, "commands.burn.done",
                 "player", target.getName(), "seconds", String.valueOf(seconds));
         return true;

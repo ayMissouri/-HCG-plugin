@@ -30,6 +30,10 @@ public final class InvseeCommand implements CommandExecutor, TabCompleter {
             Messages.send(sender, "commands.invsee.own");
             return true;
         }
+        if (HcgPlatform.isFolia()) {
+            Messages.send(sender, "general.folia-no-shared-inventory");
+            return true;
+        }
         player.openInventory(target.getInventory());
         Messages.send(player, "commands.invsee.viewing", "player", target.getName());
         return true;

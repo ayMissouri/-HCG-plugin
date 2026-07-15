@@ -2,6 +2,7 @@ name: HCGplugin
 version: '${project.version}'
 main: dev.amissouri.hcg.HCGPlugin
 api-version: '1.21'
+folia-supported: true
 description: Base plugin for HCGplugin. Provides the /hcg help menu plus Admin, Item, and World commands. Feature categories install as separate addons.
 author: amissouri
 

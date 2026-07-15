@@ -10,6 +10,7 @@ general:
   missing-argument: "&cMissing <{name}> argument."
   console-needs-player: "&cConsole must specify a player."
   value-range: "&cValue must be between {min} and {max}."
+  folia-no-shared-inventory: "&cThis command currently doesn't work on Folia."
 
 commands:
   heal:

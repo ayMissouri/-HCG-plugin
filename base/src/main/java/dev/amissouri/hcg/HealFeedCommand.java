@@ -15,6 +15,12 @@ import org.bukkit.entity.Player;
 /** /heal [player|all] and /feed [player|all], restore health or hunger. */
 public final class HealFeedCommand implements CommandExecutor, TabCompleter {
 
+    private final HcgScheduler scheduler;
+
+    public HealFeedCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         boolean heal = command.getName().equalsIgnoreCase("heal");
@@ -37,7 +43,7 @@ public final class HealFeedCommand implements CommandExecutor, TabCompleter {
             targets = List.of(target);
         }
 
-        for (Player target : targets) {
+        Players.forEach(scheduler, targets, target -> {
             if (heal) {
                 AttributeInstance maxHealth = target.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                 target.setHealth(maxHealth != null ? maxHealth.getValue() : 20.0);
@@ -47,7 +53,7 @@ public final class HealFeedCommand implements CommandExecutor, TabCompleter {
                 target.setSaturation(20f);
                 target.setExhaustion(0f);
             }
-        }
+        });
 
         String who = targets.size() == 1 ? targets.get(0).getName() : targets.size() + " players";
         Messages.send(sender, heal ? "commands.heal.done" : "commands.feed.done", "who", who);

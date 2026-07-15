@@ -27,6 +27,7 @@ public final class GravesPlugin extends JavaPlugin {
         register("graves", new GravesCommand(gravesManager));
 
         gravesManager.load();
+        gravesManager.start();
 
         HelpRegistry.register(CATEGORY, 60, List.of(
                 new Entry("/graves", "Open the graves settings menu."),
@@ -37,6 +38,9 @@ public final class GravesPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (gravesManager != null) {
+            gravesManager.shutdown();
+        }
         HelpRegistry.unregister(CATEGORY);
     }
 

@@ -3,12 +3,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import dev.amissouri.hcg.AsyncSaver;
+import dev.amissouri.hcg.HcgScheduler;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -39,15 +43,28 @@ public final class GravesManager {
             BlockFace.SOUTH, BlockFace.SOUTH_SOUTH_WEST, BlockFace.SOUTH_WEST, BlockFace.WEST_SOUTH_WEST,
             BlockFace.WEST, BlockFace.WEST_NORTH_WEST, BlockFace.NORTH_WEST, BlockFace.NORTH_NORTH_WEST};
 
+    private static final long SAVE_PERIOD_TICKS = 20L;
+
     private final JavaPlugin plugin;
     private final File file;
     private final Map<String, Grave> graves = new HashMap<>();
+    private final AsyncSaver<String> saver;
     private boolean enabled;
 
     public GravesManager(JavaPlugin plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "graves.yml");
         this.enabled = plugin.getConfig().getBoolean("graves.enabled", false);
+        this.saver = new AsyncSaver<>(new HcgScheduler(plugin), SAVE_PERIOD_TICKS,
+                this::snapshot, this::writeYaml);
+    }
+
+    void start() {
+        saver.start();
+    }
+
+    void shutdown() {
+        saver.flushNow();
     }
 
     public boolean isEnabled() {
@@ -87,7 +104,7 @@ public final class GravesManager {
                 victim.getUniqueId(), victim.getName(),
                 items.stream().map(ItemStack::clone).toList(), xp);
         graves.put(grave.key(), grave);
-        save();
+        saver.markDirty();
         return block;
     }
 
@@ -106,7 +123,7 @@ public final class GravesManager {
         if (grave.xp() > 0) {
             owner.giveExp(grave.xp());
         }
-        save();
+        saver.markDirty();
         return grave;
     }
 
@@ -123,7 +140,7 @@ public final class GravesManager {
         if (grave.xp() > 0) {
             block.getWorld().spawn(center, ExperienceOrb.class, orb -> orb.setExperience(grave.xp()));
         }
-        save();
+        saver.markDirty();
         return grave;
     }
 
@@ -208,7 +225,7 @@ public final class GravesManager {
         }
     }
 
-    private void save() {
+    private String snapshot() {
         YamlConfiguration config = new YamlConfiguration();
         int index = 0;
         for (Grave grave : graves.values()) {
@@ -222,8 +239,13 @@ public final class GravesManager {
             entry.set("xp", grave.xp());
             entry.set("items", grave.items());
         }
+        return config.saveToString();
+    }
+
+    private void writeYaml(String yaml) {
         try {
-            config.save(file);
+            Files.createDirectories(file.toPath().getParent());
+            Files.writeString(file.toPath(), yaml, StandardCharsets.UTF_8);
         } catch (IOException e) {
             plugin.getLogger().warning("Could not save graves.yml: " + e.getMessage());
         }

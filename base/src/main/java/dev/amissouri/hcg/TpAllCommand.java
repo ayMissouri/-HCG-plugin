@@ -21,38 +21,40 @@ public final class TpAllCommand implements CommandExecutor, TabCompleter {
 
     private static final int LOOKING_RANGE = 250;
 
+    private final HcgScheduler scheduler;
+
+    public TpAllCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             return false;
         }
 
-        Location destination;
-        Player excluded = sender instanceof Player player ? player : null;
-        String where;
-
         switch (args[0].toLowerCase()) {
             case "here" -> {
-                if (excluded == null) {
+                if (!(sender instanceof Player player)) {
                     Messages.send(sender, "commands.tpall.console-cant", "option", "here");
                     return true;
                 }
-                destination = excluded.getLocation();
-                where = Messages.raw("commands.tpall.where-here");
+                teleportAll(sender, player.getLocation(), player,
+                        Messages.raw("commands.tpall.where-here"));
             }
             case "looking" -> {
-                if (excluded == null) {
+                if (!(sender instanceof Player player)) {
                     Messages.send(sender, "commands.tpall.console-cant", "option", "looking");
                     return true;
                 }
-                Block target = excluded.getTargetBlockExact(LOOKING_RANGE);
+                Block target = player.getTargetBlockExact(LOOKING_RANGE);
                 if (target == null) {
                     Messages.send(sender, "commands.tpall.no-block", "range", String.valueOf(LOOKING_RANGE));
                     return true;
                 }
-                destination = target.getLocation().add(0.5, 1.0, 0.5);
-                destination.setYaw(excluded.getLocation().getYaw());
-                where = Messages.raw("commands.tpall.where-looking");
+                Location destination = target.getLocation().add(0.5, 1.0, 0.5);
+                destination.setYaw(player.getLocation().getYaw());
+                teleportAll(sender, destination, player, Messages.raw("commands.tpall.where-looking"));
             }
             default -> {
                 Player target = Bukkit.getPlayerExact(args[0]);
@@ -60,22 +62,22 @@ public final class TpAllCommand implements CommandExecutor, TabCompleter {
                     Messages.send(sender, "general.player-not-online", "player", args[0]);
                     return true;
                 }
-                destination = target.getLocation();
-                excluded = target; // don't teleport the destination player onto themselves
-                where = Messages.raw("commands.tpall.where-player", "player", target.getName());
+                if (scheduler.entity(target, () -> teleportAll(sender, target.getLocation(), target,
+                        Messages.raw("commands.tpall.where-player", "player", target.getName()))) == null) {
+                    Messages.send(sender, "general.player-not-online", "player", args[0]);
+                }
             }
         }
-
-        int count = 0;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.equals(excluded) || player.equals(sender)) {
-                continue;
-            }
-            player.teleport(destination);
-            count++;
-        }
-        Messages.send(sender, "commands.tpall.done", "count", String.valueOf(count), "where", where);
         return true;
+    }
+
+    private void teleportAll(CommandSender sender, Location destination, Player excluded, String where) {
+        List<? extends Player> targets = Bukkit.getOnlinePlayers().stream()
+                .filter(player -> !player.equals(excluded) && !player.equals(sender))
+                .toList();
+        Players.forEach(scheduler, targets, player -> player.teleportAsync(destination));
+        Messages.send(sender, "commands.tpall.done",
+                "count", String.valueOf(targets.size()), "where", where);
     }
 
     @Override

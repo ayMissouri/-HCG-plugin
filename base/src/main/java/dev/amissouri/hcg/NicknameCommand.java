@@ -19,6 +19,12 @@ public final class NicknameCommand implements CommandExecutor, TabCompleter {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
+    private final HcgScheduler scheduler;
+
+    public NicknameCommand(HcgScheduler scheduler) {
+        this.scheduler = scheduler;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
@@ -40,15 +46,19 @@ public final class NicknameCommand implements CommandExecutor, TabCompleter {
         }
 
         if (input.equalsIgnoreCase("reset") || input.equalsIgnoreCase("off")) {
-            target.displayName(null);
-            target.playerListName(null);
+            scheduler.entity(target, () -> {
+                target.displayName(null);
+                target.playerListName(null);
+            });
             Messages.send(sender, "commands.nickname.reset", "player", target.getName());
             return true;
         }
 
         Component nickname = LEGACY.deserialize(input);
-        target.displayName(nickname);
-        target.playerListName(nickname);
+        scheduler.entity(target, () -> {
+            target.displayName(nickname);
+            target.playerListName(nickname);
+        });
 
         sender.sendMessage(Messages.msg("commands.nickname.now-known", "player", target.getName())
                 .append(nickname));
