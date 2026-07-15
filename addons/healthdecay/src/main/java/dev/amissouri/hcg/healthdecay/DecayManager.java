@@ -1,14 +1,16 @@
 package dev.amissouri.hcg.healthdecay;
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.HcgText;
 import dev.amissouri.hcg.Messages;
+import dev.amissouri.hcg.Players;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitTask;
 
 /**
  * everyone's max health slowly ticks down to a floor, and a confirmed player-vs-player kill restores everyone to full.
@@ -16,13 +18,15 @@ import org.bukkit.scheduler.BukkitTask;
 public final class DecayManager {
 
     private final JavaPlugin plugin;
+    private final HcgScheduler scheduler;
 
-    private BukkitTask decayTask;
-    private double currentMaxHp;
-    private boolean bottomedOutAnnounced;
+    private volatile ScheduledTask decayTask;
+    private volatile double currentMaxHp;
+    private volatile boolean bottomedOutAnnounced;
 
-    public DecayManager(JavaPlugin plugin) {
+    public DecayManager(JavaPlugin plugin, HcgScheduler scheduler) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
         this.currentMaxHp = maximumHp();
     }
 
@@ -51,34 +55,49 @@ public final class DecayManager {
     }
 
     public void start() {
-        stopTask();
-        plugin.getConfig().set("enabled", true);
-        plugin.saveConfig();
-        scheduleTask();
-        applyToAll();
+        scheduler.global(() -> {
+            stopTask();
+            plugin.getConfig().set("enabled", true);
+            plugin.saveConfig();
+            scheduleTask();
+            applyToAll();
+        });
     }
 
     /** Stops decay and restores everyone to full health. */
     public void stop() {
-        stopTask();
-        plugin.getConfig().set("enabled", false);
-        plugin.saveConfig();
-        resetHealth();
+        scheduler.global(() -> {
+            stopTask();
+            plugin.getConfig().set("enabled", false);
+            plugin.saveConfig();
+            resetHealth();
+        });
     }
 
-    /** undo max-health changes without saving config. */
     public void shutdown() {
         stopTask();
-        currentMaxHp = maximumHp();
-        applyToAll();
+        double target = maximumHp();
+        currentMaxHp = target;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            try {
+                apply(player, target);
+            } catch (Throwable t) {
+                plugin.getLogger().warning("Could not restore max health for " + player.getName()
+                        + " on shutdown: " + t);
+            }
+        }
     }
 
     private void scheduleTask() {
         long interval = intervalTicks();
-        decayTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, interval, interval);
+        decayTask = scheduler.globalTimer(this::tick, interval, interval);
     }
 
     public void restartTimer() {
+        scheduler.global(this::restartTimerNow);
+    }
+
+    private void restartTimerNow() {
         if (decayTask != null) {
             stopTask();
             scheduleTask();
@@ -86,10 +105,8 @@ public final class DecayManager {
     }
 
     private void stopTask() {
-        if (decayTask != null) {
-            decayTask.cancel();
-            decayTask = null;
-        }
+        HcgScheduler.cancel(decayTask);
+        decayTask = null;
     }
 
     // core
@@ -108,45 +125,54 @@ public final class DecayManager {
         }
     }
 
-    /** restore everyone and start over. */
     public void onPlayerKill(Player killer, Player victim) {
         if (!isRunning()) {
             return;
         }
-        resetHealth();
-        restartTimer();
-        Messages.broadcastOps("healthdecay.kill-broadcast",
-                "killer", killer.getName(), "victim", victim.getName());
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-        }
+        String killerName = killer.getName();
+        String victimName = victim.getName();
+        scheduler.global(() -> {
+            if (!isRunning()) {
+                return;
+            }
+            resetHealth();
+            restartTimerNow();
+            Messages.broadcastOps("healthdecay.kill-broadcast",
+                    "killer", killerName, "victim", victimName);
+            Players.forEachOnline(scheduler,
+                    player -> player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f));
+        });
     }
 
     /** Restores everyone's max health and heals them to full. */
     public void resetHealth() {
-        currentMaxHp = maximumHp();
+        double target = maximumHp();
+        currentMaxHp = target;
         bottomedOutAnnounced = false;
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            apply(player);
-            player.setHealth(currentMaxHp);
-        }
+        Players.forEachOnline(scheduler, player -> {
+            apply(player, target);
+            player.setHealth(target);
+        });
     }
 
     public void applyToAll() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            apply(player);
-        }
+        double target = currentMaxHp;
+        Players.forEachOnline(scheduler, player -> apply(player, target));
     }
 
     /** Sets the player's max health to the current global value. */
     public void apply(Player player) {
+        apply(player, currentMaxHp);
+    }
+
+    private void apply(Player player, double maxHp) {
         AttributeInstance attribute = player.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (attribute == null) {
             return;
         }
-        attribute.setBaseValue(currentMaxHp);
-        if (player.getHealth() > currentMaxHp) {
-            player.setHealth(currentMaxHp);
+        attribute.setBaseValue(maxHp);
+        if (player.getHealth() > maxHp) {
+            player.setHealth(maxHp);
         }
     }
 }

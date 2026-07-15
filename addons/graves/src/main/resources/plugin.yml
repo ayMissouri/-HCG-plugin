@@ -2,6 +2,7 @@ name: HCGplugin-Graves
 version: '${project.version}'
 main: dev.amissouri.hcg.graves.GravesPlugin
 api-version: '1.21'
+folia-supported: true
 depend: [HCGplugin]
 description: Death graves that store items and XP, addon for HCGplugin.
 author: amissouri

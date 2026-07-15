@@ -2,6 +2,7 @@ package dev.amissouri.hcg.healthdecay;
 
 import java.util.List;
 
+import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.HelpRegistry;
 import dev.amissouri.hcg.HelpRegistry.Entry;
 import dev.amissouri.hcg.Messages;
@@ -22,8 +23,9 @@ public final class HealthDecayPlugin extends JavaPlugin {
         saveDefaultConfig();
         Messages.registerDefaults(this);
 
-        decayManager = new DecayManager(this);
-        getServer().getPluginManager().registerEvents(new KillListener(this, decayManager), this);
+        HcgScheduler scheduler = new HcgScheduler(this);
+        decayManager = new DecayManager(this, scheduler);
+        getServer().getPluginManager().registerEvents(new KillListener(this, scheduler, decayManager), this);
         register("healthdecay", new DecayCommand(this, decayManager));
 
         HelpRegistry.register(CATEGORY, 10, List.of(

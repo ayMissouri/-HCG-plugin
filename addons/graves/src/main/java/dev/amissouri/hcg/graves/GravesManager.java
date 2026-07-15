@@ -6,10 +6,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import dev.amissouri.hcg.AsyncSaver;
 import dev.amissouri.hcg.HcgScheduler;
@@ -47,9 +47,9 @@ public final class GravesManager {
 
     private final JavaPlugin plugin;
     private final File file;
-    private final Map<String, Grave> graves = new HashMap<>();
+    private final Map<String, Grave> graves = new ConcurrentHashMap<>();
     private final AsyncSaver<String> saver;
-    private boolean enabled;
+    private volatile boolean enabled;
 
     public GravesManager(JavaPlugin plugin) {
         this.plugin = plugin;

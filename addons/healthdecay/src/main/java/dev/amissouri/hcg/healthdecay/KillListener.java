@@ -1,4 +1,5 @@
 package dev.amissouri.hcg.healthdecay;
+import dev.amissouri.hcg.HcgScheduler;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Map;
@@ -28,11 +29,13 @@ public final class KillListener implements Listener {
     private record Tag(UUID attacker, long timestamp) {}
 
     private final JavaPlugin plugin;
+    private final HcgScheduler scheduler;
     private final DecayManager decayManager;
     private final Map<UUID, Tag> lastAttacker = new ConcurrentHashMap<>();
 
-    public KillListener(JavaPlugin plugin, DecayManager decayManager) {
+    public KillListener(JavaPlugin plugin, HcgScheduler scheduler, DecayManager decayManager) {
         this.plugin = plugin;
+        this.scheduler = scheduler;
         this.decayManager = decayManager;
     }
 
@@ -94,8 +97,8 @@ public final class KillListener implements Listener {
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
         if (decayManager.isRunning()) {
-            plugin.getServer().getScheduler().runTask(plugin,
-                    () -> decayManager.apply(event.getPlayer()));
+            Player player = event.getPlayer();
+            scheduler.entity(player, () -> decayManager.apply(player));
         }
     }
 

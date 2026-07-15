@@ -46,12 +46,13 @@ public final class RandomDropsManager {
     private final JavaPlugin plugin;
     private final List<Material> pool;
     private final List<Enchantment> enchantments;
-    private final Map<Material, Material> staticDrops = new HashMap<>();
-    private final Map<EntityType, Material> staticMobDrops = new HashMap<>();
-    private boolean enabled;
-    private Mode mode;
-    private boolean enchanted;
-    private boolean mobs;
+
+    private volatile Map<Material, Material> staticDrops = Map.of();
+    private volatile Map<EntityType, Material> staticMobDrops = Map.of();
+    private volatile boolean enabled;
+    private volatile Mode mode;
+    private volatile boolean enchanted;
+    private volatile boolean mobs;
 
     public RandomDropsManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -77,19 +78,21 @@ public final class RandomDropsManager {
     private void rebuildStaticDrops() {
         long seed = plugin.getConfig().getLong("random-drops.static-seed");
         Random random = new Random(seed);
-        staticDrops.clear();
+        Map<Material, Material> drops = new HashMap<>();
         for (Material material : Material.values()) {
             if (!material.isLegacy() && material.isBlock() && !material.isAir()) {
-                staticDrops.put(material, pool.get(random.nextInt(pool.size())));
+                drops.put(material, pool.get(random.nextInt(pool.size())));
             }
         }
         Random mobRandom = new Random(seed ^ 0x9E3779B97F4A7C15L);
-        staticMobDrops.clear();
+        Map<EntityType, Material> mobDrops = new HashMap<>();
         for (EntityType type : EntityType.values()) {
             if (type.isAlive() && type != EntityType.PLAYER) {
-                staticMobDrops.put(type, pool.get(mobRandom.nextInt(pool.size())));
+                mobDrops.put(type, pool.get(mobRandom.nextInt(pool.size())));
             }
         }
+        staticDrops = Map.copyOf(drops);
+        staticMobDrops = Map.copyOf(mobDrops);
     }
 
     public boolean isEnabled() {
