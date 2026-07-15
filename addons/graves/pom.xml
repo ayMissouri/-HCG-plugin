@@ -12,6 +12,7 @@
     </parent>
 
     <artifactId>hcg-graves</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>HCGplugin-Graves</name>
 

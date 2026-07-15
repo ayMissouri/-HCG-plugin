@@ -17,6 +17,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <paper.version>1.21.1-R0.1-SNAPSHOT</paper.version>
         <netty.version>4.1.97.Final</netty.version>
+        <hcg.base.version>4.0.0</hcg.base.version>
     </properties>
 
     <modules>
@@ -55,7 +56,7 @@
             <dependency>
                 <groupId>dev.amissouri</groupId>
                 <artifactId>hcg-base</artifactId>
-                <version>${project.version}</version>
+                <version>${hcg.base.version}</version>
                 <scope>provided</scope>
             </dependency>
         </dependencies>
@@ -79,9 +80,7 @@
             </plugins>
         </pluginManagement>
         <plugins>
-            <!-- Collect every module's built JAR into <root>/dist. Inherited by all modules;
-                 runs after the jar is built in the package phase. The parent pom and any
-                 jarless module simply have nothing to copy. -->
+            <!-- Collect every module's built JAR into <root>/dist. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -108,8 +107,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Clear dist when cleaning. inherited=false so only the root (built first)
-                 wipes it, otherwise each module's clean would delete the collected JARs. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
