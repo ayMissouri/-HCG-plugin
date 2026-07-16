@@ -188,3 +188,12 @@ tweaks:
     require-sprint: true
     # Show the speed particle trail while the boost is active.
     particles: false
+
+  # Respawn with a compass that points back to where you died.
+  recoverycompass:
+    enabled: false
+
+    # Write the death coordinates into the compass lore.
+    coordinates: true
+    # Give the compass an enchant glint.
+    glow: true

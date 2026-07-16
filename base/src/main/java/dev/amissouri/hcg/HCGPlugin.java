@@ -13,6 +13,9 @@ import dev.amissouri.hcg.tweaks.MobHealthTweak;
 import dev.amissouri.hcg.tweaks.PathSprintCommand;
 import dev.amissouri.hcg.tweaks.PathSprintListener;
 import dev.amissouri.hcg.tweaks.PathSprintTweak;
+import dev.amissouri.hcg.tweaks.RecoveryCompassCommand;
+import dev.amissouri.hcg.tweaks.RecoveryCompassListener;
+import dev.amissouri.hcg.tweaks.RecoveryCompassTweak;
 import dev.amissouri.hcg.tweaks.TreecapitatorCommand;
 import dev.amissouri.hcg.tweaks.TreecapitatorListener;
 import dev.amissouri.hcg.tweaks.TreecapitatorTweak;
@@ -128,6 +131,9 @@ public final class HCGPlugin extends JavaPlugin {
         tweaks.register(pathSprint);
         PathSprintListener pathSprintListener = new PathSprintListener(pathSprint, scheduler);
 
+        RecoveryCompassTweak recoveryCompass = new RecoveryCompassTweak(this);
+        tweaks.register(recoveryCompass);
+
         getServer().getPluginManager().registerEvents(new TweaksGuiListener(gui), this);
         getServer().getPluginManager().registerEvents(
                 new VeinminerListener(veinminer, veinEnchant, scheduler), this);
@@ -138,6 +144,8 @@ public final class HCGPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new XpTpListener(xpTp, scheduler), this);
         getServer().getPluginManager().registerEvents(new VoidTotemListener(voidTotem, scheduler), this);
         getServer().getPluginManager().registerEvents(pathSprintListener, this);
+        getServer().getPluginManager().registerEvents(
+                new RecoveryCompassListener(this, recoveryCompass, scheduler), this);
         mobHealthListener.startAll();
         pathSprintListener.startAll();
 
@@ -149,6 +157,7 @@ public final class HCGPlugin extends JavaPlugin {
         register("xptp", new XpTpCommand(xpTp, gui));
         register("voidtotem", new VoidTotemCommand(voidTotem, gui));
         register("pathsprint", new PathSprintCommand(pathSprint, gui));
+        register("recoverycompass", new RecoveryCompassCommand(recoveryCompass, gui));
     }
 
     @Override
@@ -222,7 +231,13 @@ public final class HCGPlugin extends JavaPlugin {
                 new Entry("/pathsprint sprint <on|off>",
                         "Only boost while sprinting, or while walking on a path too."),
                 new Entry("/pathsprint particles <on|off>",
-                        "Show the speed particle trail while the boost is active.")));
+                        "Show the speed particle trail while the boost is active."),
+                new Entry("/recoverycompass",
+                        "Open the Recovery Compass chest menu (respawn with a compass to your death)."),
+                new Entry("/recoverycompass coordinates <on|off>",
+                        "Write the death coordinates into the compass lore."),
+                new Entry("/recoverycompass glow <on|off>",
+                        "Give the compass an enchant glint so it stands out.")));
 
         HelpRegistry.register("Admin Commands", HelpRegistry.ORDER_ADMIN, List.of(
                 new Entry("/hcg help [category]", "Show this help menu."),

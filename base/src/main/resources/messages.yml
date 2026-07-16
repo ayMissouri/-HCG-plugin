@@ -174,3 +174,14 @@ tweaks:
     setting-set: "&a{setting} set to {value}."
     bad-value: "&cUnknown value '{input}', use one of: {options}."
     reloaded: "&aPath Sprint settings reloaded from config.yml."
+
+  recoverycompass:
+    name: "Recovery Compass"
+    summary: "Respawn with a compass that points back to where you died."
+    item-name: "&6Recovery Compass"
+    item-lore: "&7Points to where you last died."
+    item-coords: "&8{x}, {y}, {z} &7in &f{world}"
+    given: "&7A recovery compass points back to where you died."
+    setting-set: "&a{setting} set to {value}."
+    bad-value: "&cUnknown value '{input}', use one of: {options}."
+    reloaded: "&aRecovery Compass settings reloaded from config.yml."

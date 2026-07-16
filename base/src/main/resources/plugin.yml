@@ -45,6 +45,11 @@ commands:
     description: Manage the Path Sprint tweak.
     usage: /<command> [on|off|speed|sprint|particles|gui|reload]
     permission: hcg.pathsprint
+  recoverycompass:
+    description: Manage the Recovery Compass tweak.
+    usage: /<command> [on|off|coordinates|glow|gui|reload]
+    aliases: [deathcompass]
+    permission: hcg.recoverycompass
   flyspeed:
     description: Set your fly speed (1-10, default 1).
     usage: /<command> <1-10>
@@ -196,6 +201,11 @@ permissions:
     default: op
   hcg.pathsprint.use:
     description: Lets a player get a speed boost while running on paths while the tweak is on.
+    default: true
+  hcg.recoverycompass:
+    default: op
+  hcg.recoverycompass.use:
+    description: Gives a player a compass pointing to their death spot on respawn while the tweak is on.
     default: true
   hcg.flyspeed:
     default: op
