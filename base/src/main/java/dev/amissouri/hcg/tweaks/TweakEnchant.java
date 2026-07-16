@@ -10,19 +10,20 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
-public final class VeinminerEnchant {
+public final class TweakEnchant {
 
     private static final PlainTextComponentSerializer PLAIN = PlainTextComponentSerializer.plainText();
     private static final String[] NUMERALS = {"I", "II", "III", "IV", "V"};
 
     private final NamespacedKey key;
+    private final String messagePath;
 
-    public VeinminerEnchant(Plugin plugin) {
-        this.key = new NamespacedKey(plugin, "veinminer");
+    public TweakEnchant(Plugin plugin, String id) {
+        this.key = new NamespacedKey(plugin, id);
+        this.messagePath = "tweaks." + id + ".";
     }
 
     public int level(ItemStack item) {
@@ -56,12 +57,12 @@ public final class VeinminerEnchant {
     }
 
     public String displayName(int level) {
-        String name = Messages.raw("tweaks.veinminer.enchant-name");
+        String name = Messages.raw(messagePath + "enchant-name");
         return level >= 1 && level <= NUMERALS.length ? name + " " + NUMERALS[level - 1] : name;
     }
 
     private List<Component> withLoreLine(List<Component> current, int level) {
-        String name = Messages.raw("tweaks.veinminer.enchant-name");
+        String name = Messages.raw(messagePath + "enchant-name");
         List<Component> lore = new ArrayList<>();
         if (current != null) {
             for (Component line : current) {
@@ -71,7 +72,7 @@ public final class VeinminerEnchant {
             }
         }
         if (level > 0) {
-            lore.add(Messages.msg("tweaks.veinminer.enchant-lore", "name", displayName(level))
+            lore.add(Messages.msg(messagePath + "enchant-lore", "name", displayName(level))
                     .decoration(TextDecoration.ITALIC, false));
         }
         return lore.isEmpty() ? null : lore;

@@ -124,3 +124,17 @@ tweaks:
     removed: "&aRemoved {name} from {player}'s held item."
     not-enchantable: "&cVeinminer can't go on that item (see enchant.tools in config.yml)."
     not-enchanted: "&eThat item doesn't have Veinminer."
+
+  treecapitator:
+    name: "Treecapitator"
+    summary: "Chop one log, fell the whole tree."
+    enchant-name: "Treecapitator"
+    enchant-lore: "&7{name}"
+    enchant-gained: "&aYour axe came out with &b{name}&a!"
+    setting-set: "&a{setting} set to {value}."
+    bad-value: "&cUnknown value '{input}', use one of: {options}."
+    reloaded: "&aTreecapitator settings reloaded from config.yml."
+    granted: "&aGave {name} to {player}'s held item."
+    removed: "&aRemoved {name} from {player}'s held item."
+    not-enchantable: "&cTreecapitator can't go on that item (see enchant.tools in config.yml)."
+    not-enchanted: "&eThat item doesn't have Treecapitator."

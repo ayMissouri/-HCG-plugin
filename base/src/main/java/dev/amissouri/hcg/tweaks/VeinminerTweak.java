@@ -56,7 +56,7 @@ public final class VeinminerTweak implements Tweak {
             "GOLDEN_PICKAXE", "DIAMOND_PICKAXE", "NETHERITE_PICKAXE");
 
     private final JavaPlugin plugin;
-    private final VeinminerEnchant enchant;
+    private final TweakEnchant enchant;
 
     private volatile boolean enabled;
     private volatile Mode mode;
@@ -71,7 +71,7 @@ public final class VeinminerTweak implements Tweak {
     private volatile Set<Material> blocks;
     private volatile Set<Material> tools;
 
-    public VeinminerTweak(JavaPlugin plugin, VeinminerEnchant enchant) {
+    public VeinminerTweak(JavaPlugin plugin, TweakEnchant enchant) {
         this.plugin = plugin;
         this.enchant = enchant;
         reload();

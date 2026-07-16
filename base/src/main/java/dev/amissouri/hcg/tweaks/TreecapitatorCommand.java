@@ -5,8 +5,9 @@ import java.util.Locale;
 
 import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.Messages;
-import dev.amissouri.hcg.tweaks.VeinminerTweak.Durability;
-import dev.amissouri.hcg.tweaks.VeinminerTweak.Mode;
+import dev.amissouri.hcg.tweaks.TreecapitatorTweak.Durability;
+import dev.amissouri.hcg.tweaks.TreecapitatorTweak.Mode;
+import dev.amissouri.hcg.tweaks.TreecapitatorTweak.Scope;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -18,19 +19,19 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-public final class VeinminerCommand implements CommandExecutor, TabCompleter {
+public final class TreecapitatorCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUBCOMMANDS = List.of("on", "off", "mode", "hunger",
-            "durability", "size", "tool", "sneak", "chance", "minlevel", "grant", "remove",
-            "gui", "reload");
+    private static final List<String> SUBCOMMANDS = List.of("on", "off", "mode", "scope",
+            "animation", "decay", "replant", "leaves", "axe", "hunger", "durability", "size",
+            "sneak", "chance", "minlevel", "grant", "remove", "gui", "reload");
     private static final List<String> STATES = List.of("on", "off");
 
-    private final VeinminerTweak tweak;
+    private final TreecapitatorTweak tweak;
     private final TweakEnchant enchant;
     private final TweaksGui gui;
     private final HcgScheduler scheduler;
 
-    public VeinminerCommand(VeinminerTweak tweak, TweakEnchant enchant, TweaksGui gui,
+    public TreecapitatorCommand(TreecapitatorTweak tweak, TweakEnchant enchant, TweaksGui gui,
             HcgScheduler scheduler) {
         this.tweak = tweak;
         this.enchant = enchant;
@@ -50,13 +51,20 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
             case "off" -> setEnabled(sender, false);
             case "reload" -> {
                 tweak.reload();
-                Messages.send(sender, "tweaks.veinminer.reloaded");
+                Messages.send(sender, "tweaks.treecapitator.reloaded");
             }
             case "mode" -> {
                 Mode mode = parse(sender, args, Mode.class);
                 if (mode != null) {
                     tweak.setMode(mode);
                     report(sender, "Mode", mode.name());
+                }
+            }
+            case "scope" -> {
+                Scope scope = parse(sender, args, Scope.class);
+                if (scope != null) {
+                    tweak.setScope(scope);
+                    report(sender, "Fell scope", scope.name());
                 }
             }
             case "durability" -> {
@@ -66,18 +74,46 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
                     report(sender, "Durability cost", durability.name());
                 }
             }
+            case "animation" -> {
+                Boolean value = state(sender, args);
+                if (value != null) {
+                    tweak.setAnimation(value);
+                    report(sender, "Falling animation", onOff(value));
+                }
+            }
+            case "decay" -> {
+                Boolean value = state(sender, args);
+                if (value != null) {
+                    tweak.setFastLeafDecay(value);
+                    report(sender, "Fast leaf decay", onOff(value));
+                }
+            }
+            case "replant" -> {
+                Boolean value = state(sender, args);
+                if (value != null) {
+                    tweak.setReplantSapling(value);
+                    report(sender, "Replant sapling", onOff(value));
+                }
+            }
+            case "leaves" -> {
+                Boolean value = state(sender, args);
+                if (value != null) {
+                    tweak.setRequireLeaves(value);
+                    report(sender, "Require leaves", onOff(value));
+                }
+            }
+            case "axe" -> {
+                Boolean value = state(sender, args);
+                if (value != null) {
+                    tweak.setRequireAxe(value);
+                    report(sender, "Require axe", onOff(value));
+                }
+            }
             case "hunger" -> {
                 Boolean value = state(sender, args);
                 if (value != null) {
                     tweak.setHungerEnabled(value);
                     report(sender, "Hunger cost", onOff(value));
-                }
-            }
-            case "tool" -> {
-                Boolean value = state(sender, args);
-                if (value != null) {
-                    tweak.setRequireCorrectTool(value);
-                    report(sender, "Require correct tool", onOff(value));
                 }
             }
             case "sneak" -> {
@@ -90,8 +126,8 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
             case "size" -> {
                 Integer value = number(sender, args, 1, 4096);
                 if (value != null) {
-                    tweak.setMaxVeinSize(value);
-                    report(sender, "Max vein size", String.valueOf(tweak.maxVeinSize()));
+                    tweak.setMaxTreeSize(value);
+                    report(sender, "Max tree size", String.valueOf(tweak.maxTreeSize()));
                 }
             }
             case "chance" -> {
@@ -165,16 +201,16 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
                 return;
             }
             if (grant && !tweak.isEnchantable(item)) {
-                Messages.send(sender, "tweaks.veinminer.not-enchantable");
+                Messages.send(sender, "tweaks.treecapitator.not-enchantable");
                 return;
             }
             if (!grant && !enchant.has(item)) {
-                Messages.send(sender, "tweaks.veinminer.not-enchanted");
+                Messages.send(sender, "tweaks.treecapitator.not-enchanted");
                 return;
             }
             enchant.apply(item, grant ? 1 : 0);
             target.getInventory().setItemInMainHand(item);
-            Messages.send(sender, grant ? "tweaks.veinminer.granted" : "tweaks.veinminer.removed",
+            Messages.send(sender, grant ? "tweaks.treecapitator.granted" : "tweaks.treecapitator.removed",
                     "player", target.getName(), "name", enchant.displayName(1));
         });
     }
@@ -188,15 +224,20 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
                         ? Component.text("ENABLED", NamedTextColor.GREEN, TextDecoration.BOLD)
                         : Component.text("DISABLED", NamedTextColor.RED, TextDecoration.BOLD)));
         line(sender, "Mode", tweak.mode().name());
+        line(sender, "Fell scope", tweak.scope().name().replace('_', ' '));
+        line(sender, "Falling animation", onOff(tweak.animation()));
+        line(sender, "Fast leaf decay", onOff(tweak.fastLeafDecay()));
+        line(sender, "Replant sapling", onOff(tweak.replantSapling()));
+        line(sender, "Require leaves", onOff(tweak.requireLeaves()));
+        line(sender, "Require axe", onOff(tweak.requireAxe()));
         line(sender, "Hunger cost", onOff(tweak.hungerEnabled()));
         line(sender, "Durability cost", tweak.durability().name().replace('_', ' '));
-        line(sender, "Max vein size", String.valueOf(tweak.maxVeinSize()));
-        line(sender, "Require correct tool", onOff(tweak.requireCorrectTool()));
+        line(sender, "Max tree size", String.valueOf(tweak.maxTreeSize()));
         line(sender, "Sneak with enchant", onOff(tweak.requireSneak()));
         line(sender, "Enchant chance", tweak.enchantChance() + "%");
         line(sender, "Enchant min level", String.valueOf(tweak.enchantMinLevel()));
-        sender.sendMessage(Component.text("Change with /veinminer <setting> <value>, "
-                + "or open the chest menu in-game with /veinminer.", NamedTextColor.DARK_GRAY)
+        sender.sendMessage(Component.text("Change with /treecapitator <setting> <value>, "
+                + "or open the chest menu in-game with /treecapitator.", NamedTextColor.DARK_GRAY)
                 .decorate(TextDecoration.ITALIC));
     }
 
@@ -206,7 +247,7 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
     }
 
     private void report(CommandSender sender, String name, String value) {
-        Messages.send(sender, "tweaks.veinminer.setting-set",
+        Messages.send(sender, "tweaks.treecapitator.setting-set",
                 "setting", name, "value", value.replace('_', ' '));
     }
 
@@ -218,7 +259,7 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
         try {
             return Enum.valueOf(type, args[1].toUpperCase(Locale.ROOT).replace('-', '_'));
         } catch (IllegalArgumentException e) {
-            Messages.send(sender, "tweaks.veinminer.bad-value", "input", args[1],
+            Messages.send(sender, "tweaks.treecapitator.bad-value", "input", args[1],
                     "options", options(type.getEnumConstants()));
             return null;
         }
@@ -231,7 +272,7 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
         }
         String value = args[1].toLowerCase(Locale.ROOT);
         if (!STATES.contains(value)) {
-            Messages.send(sender, "tweaks.veinminer.bad-value", "input", args[1], "options", "on, off");
+            Messages.send(sender, "tweaks.treecapitator.bad-value", "input", args[1], "options", "on, off");
             return null;
         }
         return value.equals("on");
@@ -282,8 +323,9 @@ public final class VeinminerCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2) {
             List<String> options = switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "mode" -> List.of("shift", "enchant", "both");
+                case "scope" -> List.of("whole-tree", "above");
                 case "durability" -> List.of("per-block", "single");
-                case "hunger", "tool", "sneak" -> STATES;
+                case "animation", "decay", "replant", "leaves", "axe", "hunger", "sneak" -> STATES;
                 case "grant", "remove" -> Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
                 default -> List.of();
             };

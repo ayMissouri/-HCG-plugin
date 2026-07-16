@@ -19,6 +19,11 @@ commands:
     description: Manage the Veinminer tweak.
     usage: /<command> [on|off|mode|hunger|durability|size|tool|sneak|chance|minlevel|grant|remove|gui|reload]
     permission: hcg.veinminer
+  treecapitator:
+    description: Manage the Treecapitator tweak.
+    usage: /<command> [on|off|mode|scope|animation|decay|replant|leaves|axe|hunger|durability|size|sneak|chance|minlevel|grant|remove|gui|reload]
+    aliases: [treecap]
+    permission: hcg.treecapitator
   flyspeed:
     description: Set your fly speed (1-10, default 1).
     usage: /<command> <1-10>
@@ -140,6 +145,11 @@ permissions:
     default: op
   hcg.veinminer.use:
     description: Lets a player veinmine while the tweak is on.
+    default: true
+  hcg.treecapitator:
+    default: op
+  hcg.treecapitator.use:
+    description: Lets a player fell trees while the tweak is on.
     default: true
   hcg.flyspeed:
     default: op

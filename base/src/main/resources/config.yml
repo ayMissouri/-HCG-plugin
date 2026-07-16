@@ -56,3 +56,54 @@ tweaks:
       - NETHER_GOLD_ORE
       - NETHER_QUARTZ_ORE
       - ANCIENT_DEBRIS
+
+  treecapitator:
+    enabled: false
+
+    # How players fell trees:
+    #   shift   - anyone fells while sneaking
+    #   enchant - only an axe carrying the Treecapitator enchant does
+    #   both    - either one
+    mode: shift
+    max-tree-size: 128
+    # What one break fells:
+    #   whole-tree - every connected log, no matter which log was broken
+    #   above      - only the broken block and the logs above it
+    scope: whole-tree
+    animation: true
+    # Break the felled tree's leaves instantly instead of letting them decay slowly.
+    fast-leaf-decay: true
+    # Plant a matching sapling on the grass where the trunk stood.
+    replant-sapling: true
+    require-leaves: true
+    # Only fell when the log was broken with an axe.
+    require-axe: true
+    hunger:
+      # Whether the extra logs cost hunger.
+      enabled: true
+      exhaustion-per-block: 0.05
+    durability:
+      # What the tree costs the axe:
+      #   per-block - one durability point per log felled
+      #   single    - nothing beyond the one point vanilla already charges.
+      mode: per-block
+
+    enchant:
+      # Chance (%) that an enchanting table adds Treecapitator to an axe.
+      chance: 25
+      # The table option the player picks must cost at least this many levels before Treecapitator can roll.
+      min-level: 15
+      # Whether an enchanted axe must also be sneaking to fell. Off means it always does.
+      require-sneak: true
+      # Items the enchant may land on.
+      tools:
+        - WOODEN_AXE
+        - STONE_AXE
+        - IRON_AXE
+        - GOLDEN_AXE
+        - DIAMOND_AXE
+        - NETHERITE_AXE
+
+    # When this list is absent, every log and wood block counts.
+    # blocks:
+    #   - OAK_LOG

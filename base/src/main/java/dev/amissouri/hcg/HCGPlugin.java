@@ -4,12 +4,15 @@ import java.util.List;
 
 import dev.amissouri.hcg.HelpRegistry.Entry;
 import dev.amissouri.hcg.menu.MenuListener;
+import dev.amissouri.hcg.tweaks.TreecapitatorCommand;
+import dev.amissouri.hcg.tweaks.TreecapitatorListener;
+import dev.amissouri.hcg.tweaks.TreecapitatorTweak;
+import dev.amissouri.hcg.tweaks.TweakEnchant;
 import dev.amissouri.hcg.tweaks.TweaksCommand;
 import dev.amissouri.hcg.tweaks.TweaksGui;
 import dev.amissouri.hcg.tweaks.TweaksGuiListener;
 import dev.amissouri.hcg.tweaks.TweaksManager;
 import dev.amissouri.hcg.tweaks.VeinminerCommand;
-import dev.amissouri.hcg.tweaks.VeinminerEnchant;
 import dev.amissouri.hcg.tweaks.VeinminerListener;
 import dev.amissouri.hcg.tweaks.VeinminerTweak;
 import org.bukkit.command.CommandExecutor;
@@ -84,16 +87,23 @@ public final class HCGPlugin extends JavaPlugin {
         TweaksManager tweaks = new TweaksManager();
         TweaksGui gui = new TweaksGui(tweaks, scheduler);
 
-        VeinminerEnchant enchant = new VeinminerEnchant(this);
-        VeinminerTweak veinminer = new VeinminerTweak(this, enchant);
+        TweakEnchant veinEnchant = new TweakEnchant(this, "veinminer");
+        VeinminerTweak veinminer = new VeinminerTweak(this, veinEnchant);
         tweaks.register(veinminer);
+
+        TweakEnchant treeEnchant = new TweakEnchant(this, "treecapitator");
+        TreecapitatorTweak treecapitator = new TreecapitatorTweak(this, treeEnchant, scheduler);
+        tweaks.register(treecapitator);
 
         getServer().getPluginManager().registerEvents(new TweaksGuiListener(gui), this);
         getServer().getPluginManager().registerEvents(
-                new VeinminerListener(veinminer, enchant, scheduler), this);
+                new VeinminerListener(veinminer, veinEnchant, scheduler), this);
+        getServer().getPluginManager().registerEvents(
+                new TreecapitatorListener(treecapitator, treeEnchant, scheduler), this);
 
         register("tweaks", new TweaksCommand(tweaks, gui));
-        register("veinminer", new VeinminerCommand(veinminer, enchant, gui, scheduler));
+        register("veinminer", new VeinminerCommand(veinminer, veinEnchant, gui, scheduler));
+        register("treecapitator", new TreecapitatorCommand(treecapitator, treeEnchant, gui, scheduler));
     }
 
     private void registerHelp() {
@@ -109,7 +119,19 @@ public final class HCGPlugin extends JavaPlugin {
                         "Cost the tool one point per ore, or just one in total."),
                 new Entry("/veinminer size <1-4096>", "Most extra blocks one break may take out."),
                 new Entry("/veinminer grant|remove [player]",
-                        "Add or remove the Veinminer enchant on a held tool.")));
+                        "Add or remove the Veinminer enchant on a held tool."),
+                new Entry("/treecapitator", "Open the Treecapitator chest menu (chop one log, fell the tree)."),
+                new Entry("/treecapitator mode <shift|enchant|both>",
+                        "Sneak to fell, need the enchant, or either."),
+                new Entry("/treecapitator scope <whole-tree|above>",
+                        "Fell every connected log, or only the logs above the break."),
+                new Entry("/treecapitator animation <on|off>",
+                        "Topple the logs as falling blocks that drop where they land."),
+                new Entry("/treecapitator decay|replant <on|off>",
+                        "Fast leaf decay, and replanting a sapling where the trunk stood."),
+                new Entry("/treecapitator size <1-4096>", "Most extra logs one break may fell."),
+                new Entry("/treecapitator grant|remove [player]",
+                        "Add or remove the Treecapitator enchant on a held axe.")));
 
         HelpRegistry.register("Admin Commands", HelpRegistry.ORDER_ADMIN, List.of(
                 new Entry("/hcg help [category]", "Show this help menu."),

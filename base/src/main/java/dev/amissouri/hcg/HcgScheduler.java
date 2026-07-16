@@ -44,6 +44,11 @@ public final class HcgScheduler {
         Bukkit.getRegionScheduler().execute(plugin, world, chunkX, chunkZ, body);
     }
 
+    public ScheduledTask regionDelayed(Location location, Runnable body, long delayTicks) {
+        return Bukkit.getRegionScheduler()
+                .runDelayed(plugin, location, task -> body.run(), atLeastOneTick(delayTicks));
+    }
+
     public ScheduledTask regionTimer(Location location, Runnable body, long delayTicks, long periodTicks) {
         return Bukkit.getRegionScheduler()
                 .runAtFixedRate(plugin, location, task -> body.run(),

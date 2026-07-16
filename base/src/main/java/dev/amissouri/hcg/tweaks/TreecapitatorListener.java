@@ -7,24 +7,27 @@ import java.util.concurrent.ConcurrentHashMap;
 import dev.amissouri.hcg.HcgScheduler;
 import dev.amissouri.hcg.Messages;
 import org.bukkit.Material;
+import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.ItemStack;
 
-public final class VeinminerListener implements Listener {
+public final class TreecapitatorListener implements Listener {
 
-    private final Set<UUID> mining = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> felling = ConcurrentHashMap.newKeySet();
 
-    private final VeinminerTweak tweak;
+    private final TreecapitatorTweak tweak;
     private final TweakEnchant enchant;
     private final HcgScheduler scheduler;
 
-    public VeinminerListener(VeinminerTweak tweak, TweakEnchant enchant, HcgScheduler scheduler) {
+    public TreecapitatorListener(TreecapitatorTweak tweak, TweakEnchant enchant, HcgScheduler scheduler) {
         this.tweak = tweak;
         this.enchant = enchant;
         this.scheduler = scheduler;
@@ -33,19 +36,35 @@ public final class VeinminerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        if (mining.contains(player.getUniqueId())) {
+        if (felling.contains(player.getUniqueId())) {
             return;
         }
         ItemStack tool = player.getInventory().getItemInMainHand();
         if (!tweak.shouldTrigger(player, event.getBlock(), tool)) {
             return;
         }
-        mining.add(player.getUniqueId());
+        felling.add(player.getUniqueId());
         try {
-            tweak.mine(player, event.getBlock(), tool);
+            tweak.fell(player, event.getBlock(), tool);
         } finally {
-            mining.remove(player.getUniqueId());
+            felling.remove(player.getUniqueId());
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onLand(EntityChangeBlockEvent event) {
+        if (event.getEntity() instanceof FallingBlock falling && tweak.handleLand(falling)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onRemove(EntityRemoveEvent event) {
+        if (event.getCause() == EntityRemoveEvent.Cause.UNLOAD
+                || event.getCause() == EntityRemoveEvent.Cause.PLUGIN) {
+            return;
+        }
+        tweak.handleRemoved(event.getEntity());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -67,7 +86,7 @@ public final class VeinminerListener implements Listener {
             }
             enchant.apply(result, level);
             table.setItem(result);
-            Messages.send(player, "tweaks.veinminer.enchant-gained",
+            Messages.send(player, "tweaks.treecapitator.enchant-gained",
                     "name", enchant.displayName(level));
         }, 1L);
     }
