@@ -1,0 +1,58 @@
+tweaks:
+  veinminer:
+    enabled: false
+
+    # How players veinmine:
+    #   shift   - anyone veinmines while sneaking
+    #   enchant - only a tool carrying the Veinminer enchant does
+    #   both    - either one
+    mode: shift
+    max-vein-size: 64
+    # Only veinmine with a tool that actually drops the ore.
+    require-correct-tool: true
+    hunger:
+      # Whether the extra blocks cost hunger.
+      enabled: true
+      exhaustion-per-block: 0.05
+    durability:
+      # What the vein costs the tool:
+      #   per-block - one durability point per ore mined
+      #   single    - nothing beyond the one point vanilla already charges for the block the player actually hit, as if they had broken a single block
+      mode: per-block
+
+    enchant:
+      # Chance (%) that an enchanting table adds Veinminer to a tool.
+      chance: 25
+      # The table option the player picks must cost at least this many levels before Veinminer can roll.
+      min-level: 15
+      # Whether an enchanted tool must also be sneaking to veinmine. Off means it always does.
+      require-sneak: true
+      # Items the enchant may land on.
+      tools:
+        - WOODEN_PICKAXE
+        - STONE_PICKAXE
+        - IRON_PICKAXE
+        - GOLDEN_PICKAXE
+        - DIAMOND_PICKAXE
+        - NETHERITE_PICKAXE
+
+    blocks:
+      - COAL_ORE
+      - DEEPSLATE_COAL_ORE
+      - IRON_ORE
+      - DEEPSLATE_IRON_ORE
+      - COPPER_ORE
+      - DEEPSLATE_COPPER_ORE
+      - GOLD_ORE
+      - DEEPSLATE_GOLD_ORE
+      - REDSTONE_ORE
+      - DEEPSLATE_REDSTONE_ORE
+      - LAPIS_ORE
+      - DEEPSLATE_LAPIS_ORE
+      - EMERALD_ORE
+      - DEEPSLATE_EMERALD_ORE
+      - DIAMOND_ORE
+      - DEEPSLATE_DIAMOND_ORE
+      - NETHER_GOLD_ORE
+      - NETHER_QUARTZ_ORE
+      - ANCIENT_DEBRIS

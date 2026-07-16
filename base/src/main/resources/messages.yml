@@ -9,6 +9,7 @@ general:
   not-positive: "&c'{input}' is not a positive number."
   missing-argument: "&cMissing <{name}> argument."
   console-needs-player: "&cConsole must specify a player."
+  no-permission: "&cYou don't have permission to do that."
   value-range: "&cValue must be between {min} and {max}."
   folia-no-shared-inventory: "&cThis command currently doesn't work on Folia."
 
@@ -95,3 +96,31 @@ commands:
     enabled-self: "&aYou are now invisible to other players."
     disabled-self: "&aYou are visible again."
     still-vanished: "&eYou are still vanished."
+
+tweaks:
+  unknown: "&cUnknown tweak '{input}'. Use /tweaks list to see them all."
+  unknown-state: "&cUnknown state '{input}', use on or off."
+  status: "&6{tweak} is {state}."
+  already: "&e{tweak} is already {state}."
+  set: "&a{tweak} is now {state}."
+  gui:
+    title: "&8Tweaks"
+    tweak-title: "&8{tweak}"
+    back: "Back"
+    hint-toggle: "&eLeft-click &7to toggle"
+    hint-manage: "&eRight-click &7to manage"
+    hint-cycle: "&eLeft-click &7next, &eright-click &7back"
+
+  veinminer:
+    name: "Veinminer"
+    summary: "Break one ore, break the whole vein."
+    enchant-name: "Veinminer"
+    enchant-lore: "&7{name}"
+    enchant-gained: "&aYour tool came out with &b{name}&a!"
+    setting-set: "&a{setting} set to {value}."
+    bad-value: "&cUnknown value '{input}', use one of: {options}."
+    reloaded: "&aVeinminer settings reloaded from config.yml."
+    granted: "&aGave {name} to {player}'s held item."
+    removed: "&aRemoved {name} from {player}'s held item."
+    not-enchantable: "&cVeinminer can't go on that item (see enchant.tools in config.yml)."
+    not-enchanted: "&eThat item doesn't have Veinminer."

@@ -3,7 +3,7 @@ version: '${project.version}'
 main: dev.amissouri.hcg.HCGPlugin
 api-version: '1.21'
 folia-supported: true
-description: Base plugin for HCGplugin. Provides the /hcg help menu plus Admin, Item, and World commands. Feature categories install as separate addons.
+description: Base plugin for HCGplugin. Provides the /hcg help menu plus Tweaks, Admin, Item, and World commands. Feature categories install as separate addons.
 author: amissouri
 
 commands:
@@ -11,6 +11,14 @@ commands:
     description: HCGplugin help menu.
     usage: /<command> help [category] [page]
     permission: hcg.help
+  tweaks:
+    description: Open the tweaks menu, or turn a tweak on or off.
+    usage: /<command> [list|<tweak> [on|off]]
+    permission: hcg.tweaks
+  veinminer:
+    description: Manage the Veinminer tweak.
+    usage: /<command> [on|off|mode|hunger|durability|size|tool|sneak|chance|minlevel|grant|remove|gui|reload]
+    permission: hcg.veinminer
   flyspeed:
     description: Set your fly speed (1-10, default 1).
     usage: /<command> <1-10>
@@ -126,6 +134,13 @@ commands:
 permissions:
   hcg.help:
     default: op
+  hcg.tweaks:
+    default: op
+  hcg.veinminer:
+    default: op
+  hcg.veinminer.use:
+    description: Lets a player veinmine while the tweak is on.
+    default: true
   hcg.flyspeed:
     default: op
   hcg.fly:

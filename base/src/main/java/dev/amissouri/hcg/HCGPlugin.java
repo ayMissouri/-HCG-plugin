@@ -3,6 +3,14 @@ package dev.amissouri.hcg;
 import java.util.List;
 
 import dev.amissouri.hcg.HelpRegistry.Entry;
+import dev.amissouri.hcg.tweaks.TweaksCommand;
+import dev.amissouri.hcg.tweaks.TweaksGui;
+import dev.amissouri.hcg.tweaks.TweaksGuiListener;
+import dev.amissouri.hcg.tweaks.TweaksManager;
+import dev.amissouri.hcg.tweaks.VeinminerCommand;
+import dev.amissouri.hcg.tweaks.VeinminerEnchant;
+import dev.amissouri.hcg.tweaks.VeinminerListener;
+import dev.amissouri.hcg.tweaks.VeinminerTweak;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
@@ -18,6 +26,7 @@ public final class HCGPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
         Messages.init(this);
 
         HcgScheduler scheduler = new HcgScheduler(this);
@@ -64,11 +73,42 @@ public final class HCGPlugin extends JavaPlugin {
         register("sudo", new SudoCommand(scheduler));
         register("vanish", new VanishCommand(vanishManager));
 
+        registerTweaks(scheduler);
         registerHelp();
         getLogger().info("Running on " + HcgPlatform.describe());
     }
 
+    private void registerTweaks(HcgScheduler scheduler) {
+        TweaksManager tweaks = new TweaksManager();
+        TweaksGui gui = new TweaksGui(tweaks, scheduler);
+
+        VeinminerEnchant enchant = new VeinminerEnchant(this);
+        VeinminerTweak veinminer = new VeinminerTweak(this, enchant);
+        tweaks.register(veinminer);
+
+        getServer().getPluginManager().registerEvents(new TweaksGuiListener(gui), this);
+        getServer().getPluginManager().registerEvents(
+                new VeinminerListener(veinminer, enchant, scheduler), this);
+
+        register("tweaks", new TweaksCommand(tweaks, gui));
+        register("veinminer", new VeinminerCommand(veinminer, enchant, gui, scheduler));
+    }
+
     private void registerHelp() {
+        HelpRegistry.register("Tweaks", HelpRegistry.ORDER_TWEAKS, List.of(
+                new Entry("/tweaks", "Open the tweaks menu to turn tweaks on and off."),
+                new Entry("/tweaks list", "List every tweak and its state in chat."),
+                new Entry("/tweaks <tweak> [on|off]", "Check or set one tweak from the console."),
+                new Entry("/veinminer", "Veinminer settings: breaking one ore breaks the vein."),
+                new Entry("/veinminer mode <shift|enchant|both>",
+                        "Sneak to veinmine, need the enchant, or either."),
+                new Entry("/veinminer hunger <on|off>", "Whether the extra blocks cost hunger."),
+                new Entry("/veinminer durability <per-block|single>",
+                        "Cost the tool one point per ore, or just one in total."),
+                new Entry("/veinminer size <1-4096>", "Most extra blocks one break may take out."),
+                new Entry("/veinminer grant|remove [player]",
+                        "Add or remove the Veinminer enchant on a held tool.")));
+
         HelpRegistry.register("Admin Commands", HelpRegistry.ORDER_ADMIN, List.of(
                 new Entry("/hcg help [category]", "Show this help menu."),
                 new Entry("/flyspeed <1-10>", "Set your fly speed (vanilla default is 1)."),
