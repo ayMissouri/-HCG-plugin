@@ -145,3 +145,10 @@ tweaks:
     setting-set: "&a{setting} set to {value}."
     bad-value: "&cUnknown value '{input}', use one of: {options}."
     reloaded: "&aMob Health Display settings reloaded from config.yml."
+
+  xptp:
+    name: "XP Teleport"
+    summary: "XP from your kills and mining skips the orbs and goes straight to you."
+    setting-set: "&a{setting} set to {value}."
+    bad-value: "&cUnknown value '{input}', use one of: {options}."
+    reloaded: "&aXP Teleport settings reloaded from config.yml."

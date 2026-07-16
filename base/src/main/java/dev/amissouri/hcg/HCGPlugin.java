@@ -18,6 +18,9 @@ import dev.amissouri.hcg.tweaks.TweaksManager;
 import dev.amissouri.hcg.tweaks.VeinminerCommand;
 import dev.amissouri.hcg.tweaks.VeinminerListener;
 import dev.amissouri.hcg.tweaks.VeinminerTweak;
+import dev.amissouri.hcg.tweaks.XpTpCommand;
+import dev.amissouri.hcg.tweaks.XpTpListener;
+import dev.amissouri.hcg.tweaks.XpTpTweak;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
@@ -103,18 +106,23 @@ public final class HCGPlugin extends JavaPlugin {
         tweaks.register(mobHealth);
         mobHealthListener = new MobHealthListener(this, mobHealth, scheduler);
 
+        XpTpTweak xpTp = new XpTpTweak(this);
+        tweaks.register(xpTp);
+
         getServer().getPluginManager().registerEvents(new TweaksGuiListener(gui), this);
         getServer().getPluginManager().registerEvents(
                 new VeinminerListener(veinminer, veinEnchant, scheduler), this);
         getServer().getPluginManager().registerEvents(
                 new TreecapitatorListener(treecapitator, treeEnchant, scheduler), this);
         getServer().getPluginManager().registerEvents(mobHealthListener, this);
+        getServer().getPluginManager().registerEvents(new XpTpListener(xpTp, scheduler), this);
         mobHealthListener.startAll();
 
         register("tweaks", new TweaksCommand(tweaks, gui));
         register("veinminer", new VeinminerCommand(veinminer, veinEnchant, gui, scheduler));
         register("treecapitator", new TreecapitatorCommand(treecapitator, treeEnchant, gui, scheduler));
         register("mobhealth", new MobHealthCommand(mobHealth, gui));
+        register("xptp", new XpTpCommand(xpTp, gui));
     }
 
     @Override
@@ -156,7 +164,14 @@ public final class HCGPlugin extends JavaPlugin {
                 new Entry("/mobhealth style <hearts|numbers|both>",
                         "Draw the health as hearts, numbers, or both."),
                 new Entry("/mobhealth range <1-32>", "How far away a looked-at mob still shows health."),
-                new Entry("/mobhealth players <on|off>", "Also show other players' health.")));
+                new Entry("/mobhealth players <on|off>", "Also show other players' health."),
+                new Entry("/xptp", "Open the XP Teleport chest menu (kill and mining XP skips the orbs)."),
+                new Entry("/xptp mending <on|off>", "Repair Mending gear first, like real orbs."),
+                new Entry("/xptp sound <on|off>", "Play the orb pickup sound when the XP arrives."),
+                new Entry("/xptp blocks <on|off>",
+                        "Also send XP from mined blocks (ores, spawners) to the miner."),
+                new Entry("/xptp players <on|off>",
+                        "Also send a slain player's dropped XP to their killer.")));
 
         HelpRegistry.register("Admin Commands", HelpRegistry.ORDER_ADMIN, List.of(
                 new Entry("/hcg help [category]", "Show this help menu."),

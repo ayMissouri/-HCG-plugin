@@ -122,3 +122,16 @@ tweaks:
     style: both
     range: 12
     include-players: false
+
+  # XP from a player's kills and mining goes straight to the player instead of dropping orbs.
+  xptp:
+    enabled: false
+
+    # Repair the player's Mending gear first.
+    mending: true
+    # Play the orb pickup sound when the XP arrives.
+    sound: true
+    # Also send XP from mined blocks (ores, spawners) straight to the miner.
+    blocks: true
+    # Send killed players' XP straight to the killer.
+    include-players: false

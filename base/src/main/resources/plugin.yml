@@ -28,6 +28,10 @@ commands:
     description: Manage the Mob Health Display tweak.
     usage: /<command> [on|off|display|style|range|players|gui|reload]
     permission: hcg.mobhealth
+  xptp:
+    description: Manage the XP Teleport tweak.
+    usage: /<command> [on|off|mending|sound|blocks|players|gui|reload]
+    permission: hcg.xptp
   flyspeed:
     description: Set your fly speed (1-10, default 1).
     usage: /<command> <1-10>
@@ -159,6 +163,11 @@ permissions:
     default: op
   hcg.mobhealth.use:
     description: Lets a player see mob health while the tweak is on.
+    default: true
+  hcg.xptp:
+    default: op
+  hcg.xptp.use:
+    description: Lets a player's kills and mining send their XP straight to them while the tweak is on.
     default: true
   hcg.flyspeed:
     default: op
